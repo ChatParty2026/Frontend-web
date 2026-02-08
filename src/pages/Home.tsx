@@ -2,6 +2,7 @@ import { Gamepad2, Users, MessageCircle, Zap } from "lucide-react";
 import { Header } from "../components/Header";
 import { Board } from "../components/Board";
 import { LiveChat } from "../components/LiveChat";
+import { UserProfileCard } from "../components/UserProfileCard";
 
 const FEATURED_GAMES = [
   {
@@ -96,10 +97,25 @@ export function Home() {
 
           {/* Community Section: Board & Chat */}
           <div className="grid lg:grid-cols-12 gap-8 items-start">
+            {/* 왼쪽: 게시판 */}
             <div className="lg:col-span-7">
               <Board />
             </div>
-            <div className="lg:col-span-5 sticky top-24">
+
+            {/* 오른쪽: 프로필 & 채팅 (Sticky 처리) */}
+            <div className="lg:col-span-5 sticky top-24 space-y-6">
+              <UserProfileCard />
+              {/* <UserProfileCard
+                user={{
+                  name: "김철수",
+                  avatar:
+                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Chulsoo",
+                  wins: 42,
+                  losses: 18,
+                  attendanceDays: 7,
+                  rank: "Diamond",
+                }}
+              /> */}
               <LiveChat />
             </div>
           </div>

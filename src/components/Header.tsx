@@ -2,9 +2,13 @@ import { LogIn, LogOut, User, Gamepad2 } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
-  const [user, setUser] = useState<{ name: string; avatar: string } | null>(
-    null,
-  );
+  // const [user, setUser] = useState<{ name: string; avatar: string } | null>(
+  //   null,
+  // );
+  const [user, setUser] = useState<{ name: string; avatar: string } | null>({
+    name: "김철수",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Chulsoo",
+  });
   const logout = () => setUser(null);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
