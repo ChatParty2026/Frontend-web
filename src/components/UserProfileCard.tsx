@@ -28,16 +28,42 @@ export function UserProfileCard({ user }: { user: UserProfile | null }) {
   if (!user) {
     return (
       <div className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
-        {/* 상단 밋밋한 배경 */}
+        {/* 상단 임시 프로필 영역 */}
         <div className="bg-base-300 p-6 flex items-center gap-4">
           <div className="avatar">
             <div className="w-16 h-16 rounded-2xl bg-base-100 flex items-center justify-center text-base-content/20 shadow-inner">
               <UserCircle className="w-10 h-10" />
             </div>
           </div>
-          <div className="text-base-content/50">
-            <h3 className="text-lg font-bold">로그인이 필요합니다</h3>
-            <p className="text-xs">Guest Mode</p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 group">
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  onBlur={() => setIsEditing(false)}
+                  onKeyDown={(e) => e.key === "Enter" && setIsEditing(false)}
+                  autoFocus
+                  className="input input-xs input-ghost w-full font-bold text-lg p-0 focus:bg-transparent"
+                />
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold truncate text-base-content/70">
+                    {tempName}
+                  </h3>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="p-1 hover:bg-base-content/10 rounded-md transition-colors"
+                  >
+                    <PencilLine className="w-4 h-4 text-base-content/40" />
+                  </button>
+                </>
+              )}
+            </div>
+            <p className="text-[10px] font-black opacity-30 uppercase tracking-tighter">
+              Guest Mode
+            </p>
           </div>
         </div>
 
