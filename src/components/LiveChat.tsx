@@ -16,25 +16,21 @@ const MOCK_MESSAGES: ChatMessage[] = [
     author: "시스템",
     authorAvatar: "",
     message: "채팅방에 오신 것을 환영합니다! 🎮",
-    timestamp: new Date(Date.now() - 300000),
+    timestamp: new Date(),
     isSystem: true,
-  },
-  {
-    id: "2",
-    author: "게임러버",
-    authorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=gamer",
-    message: "안녕하세요! 같이 게임하실 분~",
-    timestamp: new Date(Date.now() - 180000),
   },
 ];
 
 export function LiveChat() {
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
   const [newMessage, setNewMessage] = useState("");
-  const [onlineCount, setOnlineCount] = useState(42);
+  const [onlineCount, setOnlineCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 임시 유저 데이터
+  // WebSocket 객체를 유지하기 위한 ref
+  const socketRef = useRef<WebSocket | null>(null);
+
+  // 임시 유저 데이터 (나중에 AuthContext 연동)
   const user = {
     name: "나",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=me",
@@ -48,37 +44,51 @@ export function LiveChat() {
     scrollToBottom();
   }, [messages]);
 
-  // 랜덤 메시지 시뮬레이션
+  // WebSocket 연결 설정
   useEffect(() => {
-    const interval = setInterval(() => {
-      const randomMsgs = [
-        "누구 같이 게임할 사람?",
-        "초성 퀴즈 고고!",
-        "방금 판 대박 ㅋㅋ",
-      ];
-      const names = ["플레이어A", "게이머B", "퀴즈왕"];
-      const name = names[Math.floor(Math.random() * names.length)];
+    // 네티 서버 주소로 연결
+    const ws = new WebSocket("ws://localhost:8081/ws");
+    socketRef.current = ws;
 
-      const newMsg: ChatMessage = {
+    ws.onopen = () => {
+      console.log("✅ 서버에 연결되었습니다.");
+      setOnlineCount((prev) => prev + 1);
+    };
+
+    ws.onmessage = (event) => {
+      const serverData = event.data;
+
+      // 서버에서 온 메시지를 ChatMessage 형식으로 변환
+      const incomingMsg: ChatMessage = {
         id: Date.now().toString(),
-        author: name,
-        authorAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-        message: randomMsgs[Math.floor(Math.random() * randomMsgs.length)],
+        author: "서버유저", // 실제로는 서버에서 보낸 JSON 데이터를 파싱해서 사용하세요
+        authorAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=server`,
+        message: serverData,
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, newMsg]);
-      setOnlineCount((prev) => prev + Math.floor(Math.random() * 3) - 1);
-    }, 10000);
+      setMessages((prev) => [...prev, incomingMsg]);
+    };
 
-    return () => clearInterval(interval);
+    ws.onclose = () => {
+      console.log("❌ 서버와 연결이 끊겼습니다.");
+      setOnlineCount((prev) => Math.max(0, prev - 1));
+    };
+
+    return () => {
+      ws.close();
+    };
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !socketRef.current) return;
 
-    const message: ChatMessage = {
+    // 1. 서버로 메시지 전송
+    socketRef.current.send(newMessage);
+
+    // 2. 내 화면에 메시지 즉시 표시
+    const myMsg: ChatMessage = {
       id: Date.now().toString(),
       author: user.name,
       authorAvatar: user.avatar,
@@ -86,7 +96,7 @@ export function LiveChat() {
       timestamp: new Date(),
     };
 
-    setMessages([...messages, message]);
+    setMessages((prev) => [...prev, myMsg]);
     setNewMessage("");
   };
 
