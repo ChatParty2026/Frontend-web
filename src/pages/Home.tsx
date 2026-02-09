@@ -35,7 +35,7 @@ const FEATURED_GAMES = [
   },
 ];
 
-export function Home({ user }) {
+const Home = ({ user }) => {
   const handlePlayClick = () => {
     window.open("/rooms", "gameRooms", "width=1200,height=800");
   };
@@ -123,4 +123,6 @@ export function Home({ user }) {
       </main>
     </div>
   );
-}
+};
+
+export default Home;

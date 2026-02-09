@@ -1,4 +1,4 @@
-import { Home } from "./pages/Home";
+import Home from "./pages/Home";
 import { useEffect, useState, useRef } from "react";
 import { loginAsGuest } from "./api/authService";
 import type { GuestLoginResponse } from "./types/auth";

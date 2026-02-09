@@ -1,7 +1,7 @@
 import { X, Gamepad2 } from "lucide-react";
 import kakaoLogo from "../../assets/icons/kakao.svg";
 
-export const LoginModal = ({
+const LoginModal = ({
   isOpen,
   onClose,
 }: {
@@ -72,3 +72,5 @@ export const LoginModal = ({
     </div>
   );
 };
+
+export default LoginModal;
