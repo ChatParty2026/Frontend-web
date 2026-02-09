@@ -1,4 +1,4 @@
-import { MessageSquare, ThumbsUp, Clock, PenLine } from "lucide-react";
+import { MessageSquare, ThumbsUp, Clock, PenLine, Send } from "lucide-react";
 import { useState } from "react";
 
 interface Post {
@@ -25,19 +25,17 @@ const MOCK_POSTS: Post[] = [
     id: "2",
     author: "초보플레이어",
     authorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=newbie",
-    content:
-      "그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!",
+    content: "그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!",
     likes: 8,
     comments: 7,
     timestamp: "15분 전",
   },
 ];
 
-export function Board() {
+const Board = () => {
   const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
   const [newPost, setNewPost] = useState("");
 
-  // 테스트를 위한 임시 유저 데이터 (실제 연동 시 useAuth 사용)
   const user = {
     name: "나",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=me",
@@ -70,44 +68,54 @@ export function Board() {
   };
 
   return (
-    <div className="card bg-base-100 shadow-sm border border-base-200">
-      <div className="card-body p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <PenLine className="w-6 h-6 text-primary" />
-          <h2 className="card-title text-2xl font-bold">자유 게시판</h2>
+    <div className="w-full bg-transparent text-white">
+      <div className="p-6 md:p-8">
+        {/* 헤더 부분 */}
+        <div className="flex items-center justify-between mb-8 px-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <PenLine className="w-6 h-6 text-purple-400" />
+            </div>
+            <h2 className="text-2xl font-black italic tracking-tight uppercase">Community</h2>
+          </div>
+          <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">Feed</span>
         </div>
 
-        {/* 글쓰기 영역 */}
+        {/* 글쓰기 영역: Glassmorphism 적용 */}
         {user ? (
-          <form onSubmit={handleSubmit} className="mb-8 space-y-3">
-            <div className="flex gap-4">
-              <div className="avatar">
-                <div className="w-12 h-12 rounded-full ring ring-primary ring-offset-2 ring-offset-base-100">
-                  <img src={user.avatar} alt={user.name} />
+          <form onSubmit={handleSubmit} className="mb-10 group">
+            <div className="relative bg-white/5 border border-white/10 rounded-[2rem] p-6 focus-within:border-purple-500/50 transition-all shadow-2xl">
+              <div className="flex gap-4">
+                <div className="avatar hidden sm:block">
+                  <div className="w-12 h-12 rounded-2xl ring-2 ring-purple-500/30">
+                    <img src={user.avatar} alt={user.name} />
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 space-y-2">
-                <textarea
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  placeholder="새로운 소식을 공유해보세요!"
-                  className="textarea textarea-bordered w-full h-24 focus:textarea-primary resize-none rounded-xl"
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={!newPost.trim()}
-                    className="btn btn-primary btn-md rounded-xl px-8"
-                  >
-                    게시하기
-                  </button>
+                <div className="flex-1 space-y-4">
+                  <textarea
+                    value={newPost}
+                    onChange={(e) => setNewPost(e.target.value)}
+                    placeholder="무슨 생각을 하고 계신가요?"
+                    className="w-full bg-transparent border-none focus:ring-0 text-white placeholder:text-gray-600 resize-none min-h-[80px] text-lg font-medium"
+                  />
+                  <div className="flex justify-end items-center gap-4">
+                    <span className="text-xs text-gray-600 font-bold uppercase tracking-tighter">Press enter to post</span>
+                    <button
+                      type="submit"
+                      disabled={!newPost.trim()}
+                      className="btn border-none bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl px-6 min-h-0 h-11 font-bold shadow-lg shadow-purple-500/20 disabled:opacity-30 disabled:grayscale transition-all"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      POST
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </form>
         ) : (
-          <div className="alert bg-base-200 mb-8 border-none rounded-xl">
-            <span>로그인하시면 게시글을 작성할 수 있습니다.</span>
+          <div className="p-6 bg-white/5 border border-dashed border-white/10 rounded-[2rem] text-center mb-10">
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">Login to join the conversation</p>
           </div>
         )}
 
@@ -116,42 +124,42 @@ export function Board() {
           {posts.map((post) => (
             <div
               key={post.id}
-              className="p-5 rounded-2xl border border-base-200 hover:border-primary/30 hover:bg-base-200/30 transition-all group"
+              className="relative p-6 rounded-[2.5rem] bg-[#121212] border border-white/5 hover:border-purple-500/30 transition-all duration-300 group"
             >
-              <div className="flex items-start gap-4 mb-3">
+              <div className="flex items-start gap-4 mb-4">
                 <div className="avatar">
-                  <div className="w-10 h-10 rounded-full">
+                  <div className="w-10 h-10 rounded-xl">
                     <img src={post.authorAvatar} alt={post.author} />
                   </div>
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold text-base-content">
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="font-bold text-gray-200 text-sm uppercase italic">
                       {post.author}
                     </span>
-                    <span className="text-xs text-base-content/50 flex items-center gap-1">
+                    <span className="text-[10px] text-gray-600 font-black uppercase tracking-widest flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {post.timestamp}
                     </span>
                   </div>
-                  <p className="text-base-content/80 leading-relaxed">
+                  <p className="text-gray-400 text-base leading-relaxed font-medium">
                     {post.content}
                   </p>
                 </div>
               </div>
 
               {/* 액션 버튼들 */}
-              <div className="flex items-center gap-4 pl-14">
+              <div className="flex items-center gap-2 pl-12">
                 <button
                   onClick={() => handleLike(post.id)}
-                  className="btn btn-ghost btn-xs rounded-lg gap-1.5 hover:text-primary transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-purple-500/10 text-gray-500 hover:text-purple-400 transition-all group/btn"
                 >
-                  <ThumbsUp className="w-4 h-4" />
-                  <span>{post.likes}</span>
+                  <ThumbsUp className={`w-4 h-4 ${post.likes > 0 ? 'text-purple-500 fill-purple-500/20' : ''}`} />
+                  <span className="text-xs font-black">{post.likes}</span>
                 </button>
-                <button className="btn btn-ghost btn-xs rounded-lg gap-1.5 hover:text-secondary transition-colors">
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-pink-500/10 text-gray-500 hover:text-pink-400 transition-all group/btn">
                   <MessageSquare className="w-4 h-4" />
-                  <span>{post.comments}</span>
+                  <span className="text-xs font-black">{post.comments}</span>
                 </button>
               </div>
             </div>
@@ -160,4 +168,6 @@ export function Board() {
       </div>
     </div>
   );
-}
+};
+
+export default Board;
