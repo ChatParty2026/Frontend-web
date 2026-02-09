@@ -23,7 +23,7 @@ export function Header() {
             <Gamepad2 className="w-6 h-6" />
           </div>
           <h1 className="text-xl font-bold tracking-tight hidden sm:block">
-            씨파티
+            채티
           </h1>
         </div>
       </div>

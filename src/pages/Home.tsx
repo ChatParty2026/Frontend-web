@@ -35,7 +35,7 @@ const FEATURED_GAMES = [
   },
 ];
 
-export function Home() {
+export function Home({ user }) {
   const handlePlayClick = () => {
     window.open("/rooms", "gameRooms", "width=1200,height=800");
   };
