@@ -2,7 +2,8 @@ import { Gamepad2 } from "lucide-react";
 import Header from "../components/Header";
 import Board from "../components/Board";
 import { LiveChat } from "../components/LiveChat";
-import { UserProfileCard } from "../components/UserProfileCard";
+import UserProfileCard from "../components/UserProfileCard";
+import { useState } from "react";
 
 const FEATURED_GAMES = [
   {
@@ -39,7 +40,12 @@ const FEATURED_GAMES = [
   },
 ];
 
-const Home = ({ user }) => {
+const Home = () => {
+  const [user, setUser] = useState<{ name: string; avatar: string } | null>({
+    name: "김철수",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Chulsoo",
+  });
+
   const handlePlayClick = () => {
     window.open("/rooms", "gameRooms", "width=1200,height=800");
   };
@@ -134,7 +140,7 @@ const Home = ({ user }) => {
             {/* 오른쪽: 프로필 & 채팅 */}
             <div className="lg:col-span-5 sticky top-28 space-y-6">
               <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] p-2 shadow-2xl">
-                <UserProfileCard />
+                <UserProfileCard user={user} />
               </div>
               <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl">
                 <LiveChat />
