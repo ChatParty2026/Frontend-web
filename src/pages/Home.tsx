@@ -45,6 +45,7 @@ const Home = () => {
     name: "김철수",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Chulsoo",
   });
+  // const [user, setUser] = useState<null>(null);
 
   const handlePlayClick = () => {
     window.open("/rooms", "gameRooms", "width=1200,height=800");
@@ -139,9 +140,11 @@ const Home = () => {
 
             {/* 오른쪽: 프로필 & 채팅 */}
             <div className="lg:col-span-5 sticky top-28 space-y-6">
-              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] p-2 shadow-2xl">
+              {/* p-2를 제거하고 overflow-hidden을 추가하여 카드가 박스에 딱 맞게 합니다. */}
+              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl">
                 <UserProfileCard user={user} />
               </div>
+
               <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl">
                 <LiveChat />
               </div>
