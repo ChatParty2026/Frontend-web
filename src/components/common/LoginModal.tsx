@@ -10,16 +10,20 @@ const LoginModal = ({
 }) => {
   if (!isOpen) return null;
 
+  // 구글 로그인 핸들러
+  const handleGoogleLogin = () => {
+    // Spring Boot 구글 로그인 엔드포인트로 이동
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+  };
+
   return (
-    // 배경: 밤처럼 아주 어둡게 (90%), 블러 효과 강화
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl transition-all duration-500">
-      {/* 클럽 네온 효과 (배경 글로우) */}
+      {/* 클럽 네온 효과 */}
       <div className="absolute w-64 h-64 bg-purple-600/30 rounded-full blur-[120px] -top-10 -left-10 animate-pulse"></div>
       <div className="absolute w-64 h-64 bg-pink-600/30 rounded-full blur-[120px] -bottom-10 -right-10 animate-pulse"></div>
 
-      {/* 모달 컨테이너: 다크 모드 스타일 + 유리 질감(Glassmorphism) */}
+      {/* 모달 컨테이너 */}
       <div className="relative w-full max-w-sm rounded-[2.5rem] bg-[#121212] p-8 shadow-[0_0_50px_-12px_rgba(168,85,247,0.4)] border border-white/10 animate-in fade-in zoom-in duration-300">
-        {/* 닫기 버튼 */}
         <button
           onClick={onClose}
           className="absolute top-6 right-6 text-white/40 hover:text-white hover:rotate-90 transition-all"
@@ -33,7 +37,7 @@ const LoginModal = ({
             <Gamepad2 className="w-10 h-10" />
           </div>
           <h2 className="text-3xl font-black tracking-tight text-white italic">
-            CHATTY{" "}
+            CHATTY
           </h2>
           <p className="mt-2 text-sm text-gray-400 font-medium">
             오늘 밤, 뜨겁게 게임 한 판? 🕹️
@@ -42,12 +46,16 @@ const LoginModal = ({
 
         {/* 소셜 버튼 그룹 */}
         <div className="flex flex-col gap-4">
-          <button className="btn border-none w-full bg-[#FEE500] text-[#191919] hover:bg-[#FADA00] rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95">
+          <button className="flex items-center justify-center gap-3 w-full bg-[#FEE500] text-[#191919] hover:bg-[#FADA00] rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95">
             <img src={kakaoLogo} className="w-6 h-6" alt="Kakao" />
             카카오로 입장하기
           </button>
 
-          <button className="btn border-none w-full bg-white text-gray-900 hover:bg-gray-100 rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95">
+          {/* 구글 로그인 버튼: 핸들러 연결 */}
+          <button
+            onClick={handleGoogleLogin}
+            className="flex items-center justify-center gap-3 w-full bg-white text-gray-900 hover:bg-gray-100 rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+          >
             <img
               src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
               className="w-5 h-5"
@@ -56,8 +64,8 @@ const LoginModal = ({
             구글로 입장하기
           </button>
 
-          <button className="btn border-none w-full bg-[#03C75A] text-white hover:bg-[#02b351] rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95">
-            <span className="text-xl font-black italic mr-1">N</span>
+          <button className="flex items-center justify-center gap-3 w-full bg-[#03C75A] text-white hover:bg-[#02b351] rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95">
+            <span className="text-xl font-black italic">N</span>
             네이버로 입장하기
           </button>
         </div>
