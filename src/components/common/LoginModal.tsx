@@ -14,7 +14,7 @@ const LoginModal = ({
   const handleGoogleLogin = () => {
     // Spring Boot 구글 로그인 엔드포인트로 이동
     window.location.href =
-      "https://hemipodan-northeastern-stetson.ngrok-free.dev/oauth2/authorization/google";
+      import.meta.env.VITE_API_URL + "/oauth2/authorization/google";
   };
 
   return (
