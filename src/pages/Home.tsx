@@ -1,6 +1,6 @@
 import { Gamepad2 } from "lucide-react";
 import Header from "../components/Header";
-import Board from "../components/Board";
+import Board from "../components/board/Board";
 import LiveChat from "../components/LiveChat";
 import UserProfileCard from "../components/UserProfileCard";
 import { useAuthInit } from "../hooks/useAuthInit";
