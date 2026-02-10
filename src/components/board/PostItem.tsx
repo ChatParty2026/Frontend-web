@@ -29,7 +29,7 @@ const PostItem = ({
   };
 
   return (
-    <div className="relative p-6 rounded-[2.5rem] bg-[#121212] border border-white/5 hover:border-purple-500/30 transition-all duration-300 group">
+    <div className="relative p-6 rounded-[2.5rem] bg-[#121212] border border-white/5 hover:border-purple-500/30 transition-all duration-300">
       <div className="flex items-start gap-4 mb-4">
         <div className="avatar">
           <div className="w-10 h-10 rounded-xl overflow-hidden">
@@ -65,10 +65,7 @@ const PostItem = ({
           </div>
 
           {/* 본문 영역: 요약 높이에서 전체 높이로 확장 */}
-          <div
-            className={`${isLongContent ? "cursor-pointer" : ""} group/content relative`}
-            onClick={() => isLongContent && setIsExpanded(!isExpanded)}
-          >
+          <div className={`${isLongContent ? "cursor-pointer" : ""} relative`}>
             <div
               className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${
                 isExpanded ? "max-h-[2000px]" : "max-h-[4.5em]" // 4.5em은 약 3줄 분량
@@ -81,14 +78,12 @@ const PostItem = ({
 
             {/* 더 보기/접기 버튼 및 그라데이션 커버 */}
             {isLongContent && (
-              <div className="relative">
-                {!isExpanded && (
-                  <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-[#121212] to-transparent" />
-                )}
-                <button className="text-xs text-purple-400 font-bold mt-2 inline-block opacity-60 group-hover/content:opacity-100 transition-opacity">
-                  {isExpanded ? "접기" : "더 보기"}
-                </button>
-              </div>
+              <button
+                onClick={() => isLongContent && setIsExpanded(!isExpanded)}
+                className="text-xs text-purple-400 font-bold mt-2 inline-block opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                {isExpanded ? "접기" : "더 보기"}
+              </button>
             )}
           </div>
         </div>
@@ -98,7 +93,7 @@ const PostItem = ({
       <div className="flex items-center gap-2 pl-12">
         <button
           onClick={() => onLike(post.id)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-purple-500/10 text-gray-500 hover:text-purple-400 transition-all group/btn"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-purple-500/10 text-gray-500 hover:text-purple-400 transition-all"
         >
           <ThumbsUp
             className={`w-4 h-4 ${post.likes > 0 ? "text-purple-500 fill-purple-500/20" : ""}`}
@@ -107,7 +102,7 @@ const PostItem = ({
         </button>
         <button
           onClick={() => onCommentClick(post)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-pink-500/10 text-gray-500 hover:text-pink-400 transition-all group/btn cursor-pointer"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-pink-500/10 text-gray-500 hover:text-pink-400 transition-all cursor-pointer"
         >
           <MessageSquare className="w-4 h-4" />
           <span className="text-xs font-black">{post.comments}</span>
