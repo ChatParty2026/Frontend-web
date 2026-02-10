@@ -3,7 +3,8 @@ import Header from "../components/Header";
 import Board from "../components/Board";
 import LiveChat from "../components/LiveChat";
 import UserProfileCard from "../components/UserProfileCard";
-import { useState } from "react";
+import { useAuthInit } from "../hooks/useAuthInit";
+import type { User } from "../types/auth";
 
 const FEATURED_GAMES = [
   {
@@ -41,11 +42,7 @@ const FEATURED_GAMES = [
 ];
 
 const Home = () => {
-  const [user, setUser] = useState<{ name: string; avatar: string } | null>({
-    name: "김철수",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Chulsoo",
-  });
-  // const [user, setUser] = useState<null>(null);
+  const { user, setUser } = useAuthInit();
 
   const handlePlayClick = () => {
     window.open("/rooms", "gameRooms", "width=1200,height=800");
@@ -61,7 +58,7 @@ const Home = () => {
         style={{ animationDelay: "1s" }}
       ></div>
 
-      <Header />
+      <Header user={user as User | null} setUser={setUser} />
 
       <main className="relative pt-32 pb-12 px-4 z-10">
         <div className="container mx-auto max-w-7xl">

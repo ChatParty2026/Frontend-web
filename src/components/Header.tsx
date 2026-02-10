@@ -1,19 +1,16 @@
 import { LogIn, LogOut, Gamepad2, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import LoginModal from "./common/LoginModal";
+import { logout } from "../api/authService";
+import type { User } from "../types/auth";
 
-const Header = () => {
-    // const [user, setUser] = useState<{ name: string; avatar: string } | null>(
-  //   null,
-  // );
-  const [user, setUser] = useState<{ name: string; avatar: string } | null>({
-    name: "김철수",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Chulsoo",
-  });
-
+const Header = ({ user, setUser }: { user: User | null; setUser: (user: User | null) => void }) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const logout = () => setUser(null);
+  const handleLogout = async () => {
+    await logout();
+    setUser(null);
+  };
 
   return (
     <>
@@ -57,13 +54,13 @@ const Header = () => {
                 <div className="flex items-center gap-3 bg-white/5 p-1 pr-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
                   <div className="avatar">
                     <div className="w-10 h-10 rounded-xl ring-2 ring-purple-500/50">
-                      <img src={user.avatar} alt={user.name} />
+                      <img src={user.avatar} alt={user.nickname} />
                     </div>
                   </div>
                   <div className="hidden md:flex flex-col items-start leading-tight">
                     <span className="text-xs text-gray-400">Welcome</span>
                     <span className="text-sm font-bold text-white uppercase italic">
-                      {user.name}
+                      {user.nickname}
                     </span>
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-500" />
@@ -71,7 +68,7 @@ const Header = () => {
 
                 {/* 로그아웃 버튼 */}
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="p-3 text-gray-400 hover:text-pink-500 hover:bg-pink-500/10 rounded-xl transition-all"
                   title="로그아웃"
                 >

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { loginAsGuest } from "../api/authService";
-import type { GuestLoginResponse } from "../types/auth";
+import { loginAsGuest, getUserInfo } from "../api/authService";
+import type { GuestLoginResponse, User } from "../types/auth";
 
 export const useAuthInit = () => {
-  const [user, setUser] = useState<GuestLoginResponse | null>(null);
+  const [user, setUser] = useState<User | GuestLoginResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const hasExecuted = useRef(false);
 
@@ -32,14 +32,29 @@ export const useAuthInit = () => {
             window.location.pathname,
           );
 
-          // 소셜 로그인 성공 시에는 유저 정보를 받아오는 추가 API 호출이 필요할 수 있습니다.
-          // 여기서는 일단 로딩만 끄고 종료합니다.
+          // 구글 로그인 성공 후 사용자 정보 조회
+          try {
+            const userData = await getUserInfo();
+            setUser(userData);
+            console.log("사용자 정보 조회 성공:", userData.nickname);
+          } catch (error) {
+            console.error("사용자 정보 조회 실패:", error);
+          }
           setIsLoading(false);
           return;
         }
 
         // 2. 기존 토큰이 이미 있는 경우 (새로고침 등)
         if (localStorage.getItem("accessToken")) {
+          try {
+            const userData = await getUserInfo();
+            setUser(userData);
+            console.log("저장된 토큰으로 사용자 정보 조회:", userData.nickname);
+          } catch (error) {
+            console.error("토큰이 유효하지 않음:", error);
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+          }
           setIsLoading(false);
           return;
         }
@@ -60,5 +75,5 @@ export const useAuthInit = () => {
     initAuth();
   }, []);
 
-  return { user, isLoading };
+  return { user, isLoading, setUser };
 };

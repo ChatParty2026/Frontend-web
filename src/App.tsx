@@ -15,7 +15,7 @@ const App = () => {
     );
   }
 
-  return <Home user={user} />;
+  return <Home />;
 };
 
 export default App;
