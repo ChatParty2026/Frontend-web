@@ -63,8 +63,8 @@ export const useAuthInit = () => {
         }
 
         // 3. 토큰이 아예 없는 경우 게스트 로그인 진행
-        localStorage.setItem("isGuest", "true");
         const data = await loginAsGuest();
+        localStorage.setItem("isGuest", "true");
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
         setUser(data);
