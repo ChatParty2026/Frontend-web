@@ -74,7 +74,7 @@ const Home = () => {
 
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter italic">
               LET'S PLAY <br />
-              <span className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(168,85,247,0.5)]">
+              <span className="px-3 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(168,85,247,0.5)]">
                 CHATTY PARTY
               </span>
             </h1>
