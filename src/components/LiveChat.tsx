@@ -39,10 +39,6 @@ const LiveChat = () => {
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
     const ws = new WebSocket("ws://localhost:8081/ws");
     socketRef.current = ws;
 
