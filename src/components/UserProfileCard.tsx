@@ -206,7 +206,7 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
                 <p className="text-[10px] font-bold text-base-content/40 leading-none">
                   JOINED
                 </p>
-                <p className="text-sm font-bold">2026.01.27</p>
+                <p className="text-sm font-bold">{user.joinedAt}</p>
               </div>
             </div>
           </div>
