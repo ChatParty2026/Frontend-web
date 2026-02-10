@@ -131,7 +131,7 @@ const Home = () => {
           <div className="grid lg:grid-cols-12 gap-8 items-start">
             {/* 왼쪽: 게시판 (다크 테마에 맞춰 투명도 조절) */}
             <div className="lg:col-span-7 bg-white/5 rounded-[2.5rem] border border-white/10 p-2 backdrop-blur-sm">
-              <Board />
+              <Board user={user} />
             </div>
 
             {/* 오른쪽: 프로필 & 채팅 */}

@@ -1,5 +1,14 @@
-import { MessageSquare, ThumbsUp, Clock, PenLine, Send } from "lucide-react";
+import { createPost, type PostResponse } from "../api/boardService";
+import {
+  MessageSquare,
+  ThumbsUp,
+  Clock,
+  PenLine,
+  Send,
+  UserCircle,
+} from "lucide-react";
 import { useState } from "react";
+import type { AuthUser } from "../types/auth";
 
 interface Post {
   id: string;
@@ -25,38 +34,55 @@ const MOCK_POSTS: Post[] = [
     id: "2",
     author: "초보플레이어",
     authorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=newbie",
-    content: "그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!",
+    content:
+      "그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!",
     likes: 8,
     comments: 7,
     timestamp: "15분 전",
   },
 ];
 
-const Board = () => {
+const Board = ({ user }: { user: AuthUser | null }) => {
   const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
   const [newPost, setNewPost] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const user = {
-    name: "나",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=me",
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPost.trim() || !user) return;
+    if (!newPost.trim() || !user || isSubmitting) return;
 
-    const post: Post = {
-      id: Date.now().toString(),
-      author: user.name,
-      authorAvatar: user.avatar,
-      content: newPost,
-      likes: 0,
-      comments: 0,
-      timestamp: "방금",
-    };
+    try {
+      setIsSubmitting(true);
 
-    setPosts([post, ...posts]);
-    setNewPost("");
+      // API 호출
+      const response = await createPost({
+        type: "THREAD",
+        content: newPost,
+        title: "",
+      });
+
+      // 타입 카드: 유저 역할에 따른 아바타 처리
+      const authorAvatar = user.role === "USER" ? user.avatar : "GUEST";
+
+      // 성공 시 UI 업데이트
+      const formattedPost = {
+        id: response.id.toString(),
+        author: user.nickname,
+        authorAvatar: authorAvatar,
+        content: response.content,
+        likes: 0,
+        comments: 0,
+        timestamp: "방금",
+      };
+
+      setPosts((prev) => [formattedPost, ...prev]);
+      setNewPost("");
+    } catch (error) {
+      console.error("게시글 등록 실패:", error);
+      alert("게시글 등록에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleLike = (postId: string) => {
@@ -76,9 +102,13 @@ const Board = () => {
             <div className="p-2 bg-purple-500/20 rounded-lg">
               <PenLine className="w-6 h-6 text-purple-400" />
             </div>
-            <h2 className="text-2xl font-black italic tracking-tight uppercase">Community</h2>
+            <h2 className="text-2xl font-black italic tracking-tight uppercase">
+              Community
+            </h2>
           </div>
-          <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">Feed</span>
+          <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">
+            Feed
+          </span>
         </div>
 
         {/* 글쓰기 영역: Glassmorphism 적용 */}
@@ -88,7 +118,11 @@ const Board = () => {
               <div className="flex gap-4">
                 <div className="avatar hidden sm:block">
                   <div className="w-12 h-12 rounded-2xl ring-2 ring-purple-500/30">
-                    <img src={user.avatar} alt={user.name} />
+                    {user.role === "USER" ? (
+                      <img src={user.avatar} alt={user.nickname} />
+                    ) : (
+                      <UserCircle className="w-12 h-12 text-gray-500" />
+                    )}
                   </div>
                 </div>
                 <div className="flex-1 space-y-4">
@@ -99,7 +133,9 @@ const Board = () => {
                     className="w-full bg-transparent border-none focus:ring-0 text-white placeholder:text-gray-600 resize-none min-h-[80px] text-lg font-medium"
                   />
                   <div className="flex justify-end items-center gap-4">
-                    <span className="text-xs text-gray-600 font-bold uppercase tracking-tighter">Press enter to post</span>
+                    <span className="text-xs text-gray-600 font-bold uppercase tracking-tighter">
+                      Press enter to post
+                    </span>
                     <button
                       type="submit"
                       disabled={!newPost.trim()}
@@ -115,7 +151,9 @@ const Board = () => {
           </form>
         ) : (
           <div className="p-6 bg-white/5 border border-dashed border-white/10 rounded-[2rem] text-center mb-10">
-            <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">Login to join the conversation</p>
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">
+              Login to join the conversation
+            </p>
           </div>
         )}
 
@@ -154,7 +192,9 @@ const Board = () => {
                   onClick={() => handleLike(post.id)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-purple-500/10 text-gray-500 hover:text-purple-400 transition-all group/btn"
                 >
-                  <ThumbsUp className={`w-4 h-4 ${post.likes > 0 ? 'text-purple-500 fill-purple-500/20' : ''}`} />
+                  <ThumbsUp
+                    className={`w-4 h-4 ${post.likes > 0 ? "text-purple-500 fill-purple-500/20" : ""}`}
+                  />
                   <span className="text-xs font-black">{post.likes}</span>
                 </button>
                 <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-pink-500/10 text-gray-500 hover:text-pink-400 transition-all group/btn">
