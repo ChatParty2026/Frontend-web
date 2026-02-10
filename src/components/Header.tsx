@@ -2,9 +2,15 @@ import { LogIn, LogOut, Gamepad2, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import LoginModal from "./common/LoginModal";
 import { logout } from "../api/authService";
-import type { User } from "../types/auth";
+import type { AuthUser } from "../types/auth";
 
-const Header = ({ user, setUser }: { user: User | null; setUser: (user: User | null) => void }) => {
+const Header = ({
+  user,
+  setUser,
+}: {
+  user: AuthUser | null;
+  setUser: (user: AuthUser | null) => void;
+}) => {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleLogout = async () => {
@@ -48,7 +54,7 @@ const Header = ({ user, setUser }: { user: User | null; setUser: (user: User | n
 
           {/* 3. 사용자 액션 영역 */}
           <div className="flex items-center gap-4">
-            {user ? (
+            {user && user.role === "USER" ? (
               <div className="flex items-center gap-4">
                 {/* 프로필 정보 */}
                 <div className="flex items-center gap-3 bg-white/5 p-1 pr-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">

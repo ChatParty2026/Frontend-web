@@ -4,7 +4,6 @@ import Board from "../components/Board";
 import LiveChat from "../components/LiveChat";
 import UserProfileCard from "../components/UserProfileCard";
 import { useAuthInit } from "../hooks/useAuthInit";
-import type { User } from "../types/auth";
 
 const FEATURED_GAMES = [
   {
@@ -58,7 +57,7 @@ const Home = () => {
         style={{ animationDelay: "1s" }}
       ></div>
 
-      <Header user={user as User | null} setUser={setUser} />
+      <Header user={user} setUser={setUser} />
 
       <main className="relative pt-32 pb-12 px-4 z-10">
         <div className="container mx-auto max-w-7xl">

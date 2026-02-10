@@ -11,15 +11,18 @@ import {
 } from "lucide-react";
 
 import { useState } from "react";
-import type { User } from "../types/auth";
+import type { AuthUser } from "../types/auth";
 
-const UserProfileCard = ({ user }: { user: User | null }) => {
+const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
   const [tempName, setTempName] = useState("익명의 게이머");
   const [isEditing, setIsEditing] = useState(false);
 
-  if (!user) {
+  if (!user || user.role === "GUEST") {
     return (
-      <div data-theme="dark" className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+      <div
+        data-theme="dark"
+        className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden"
+      >
         {/* 상단 임시 프로필 영역 */}
         <div className="bg-base-300 p-6 flex items-center gap-4">
           <div className="avatar">
@@ -95,7 +98,10 @@ const UserProfileCard = ({ user }: { user: User | null }) => {
     75.29; // 임시 고정 승률
 
   return (
-    <div data-theme="dark" className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+    <div
+      data-theme="dark"
+      className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden"
+    >
       {/* 상단 프로필 요약 */}
       <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6">
         <div className="flex items-center justify-between">

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { loginAsGuest, getUserInfo } from "../api/authService";
-import type { GuestLoginResponse, User } from "../types/auth";
+import type { AuthUser } from "../types/auth";
 
 export const useAuthInit = () => {
-  const [user, setUser] = useState<User | GuestLoginResponse | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const hasExecuted = useRef(false);
 
@@ -51,7 +51,10 @@ export const useAuthInit = () => {
             try {
               const userData = await getUserInfo();
               setUser(userData);
-              console.log("저장된 토큰으로 사용자 정보 조회:", userData.nickname);
+              console.log(
+                "저장된 토큰으로 사용자 정보 조회:",
+                userData.nickname,
+              );
             } catch (error) {
               console.error("토큰이 유효하지 않음:", error);
               localStorage.removeItem("accessToken");
