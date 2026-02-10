@@ -23,8 +23,7 @@ const PostItem = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const isLongContent = post.content.length > MAX_DISPLAY_LENGTH;
 
-  // 텍스트 토글 핸들러
-  const handleToggleExpand = (e: React.MouseEvent) => {
+  const handleToggleExpand = () => {
     if (!isLongContent) return;
     setIsExpanded(!isExpanded);
   };
@@ -33,11 +32,16 @@ const PostItem = ({
     <div className="relative p-6 rounded-[2.5rem] bg-[#121212] border border-white/5 hover:border-purple-500/30 transition-all duration-300 group">
       <div className="flex items-start gap-4 mb-4">
         <div className="avatar">
-          <div className="w-10 h-10 rounded-xl">
-            <img src={post.authorAvatar} alt={post.author} />
+          <div className="w-10 h-10 rounded-xl overflow-hidden">
+            <img
+              src={post.authorAvatar}
+              alt={post.author}
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
-        <div className="flex-1">
+
+        <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-3">
               <span className="font-bold text-gray-200 text-sm uppercase italic">
@@ -60,20 +64,31 @@ const PostItem = ({
             )}
           </div>
 
-          {/* 본문 영역: 더 보기 로직 적용 */}
+          {/* 본문 영역: 요약 높이에서 전체 높이로 확장 */}
           <div
-            className={`${isLongContent ? "cursor-pointer" : ""} group/content`}
-            onClick={handleToggleExpand}
+            className={`${isLongContent ? "cursor-pointer" : ""} group/content relative`}
+            onClick={() => isLongContent && setIsExpanded(!isExpanded)}
           >
-            <p className="text-gray-400 text-base leading-relaxed font-medium whitespace-pre-wrap">
-              {isExpanded || !isLongContent
-                ? post.content
-                : `${post.content.slice(0, MAX_DISPLAY_LENGTH)}...`}
-            </p>
+            <div
+              className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${
+                isExpanded ? "max-h-[2000px]" : "max-h-[4.5em]" // 4.5em은 약 3줄 분량
+              }`}
+            >
+              <p className="text-gray-400 text-base leading-relaxed font-medium whitespace-pre-wrap">
+                {post.content}
+              </p>
+            </div>
+
+            {/* 더 보기/접기 버튼 및 그라데이션 커버 */}
             {isLongContent && (
-              <button className="text-xs text-purple-400 font-bold mt-2 inline-block opacity-60 group-hover/content:opacity-100 transition-opacity cursor-pointer">
-                {isExpanded ? "접기" : "더 보기"}
-              </button>
+              <div className="relative">
+                {!isExpanded && (
+                  <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-[#121212] to-transparent" />
+                )}
+                <button className="text-xs text-purple-400 font-bold mt-2 inline-block opacity-60 group-hover/content:opacity-100 transition-opacity">
+                  {isExpanded ? "접기" : "더 보기"}
+                </button>
+              </div>
             )}
           </div>
         </div>
