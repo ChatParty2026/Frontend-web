@@ -15,7 +15,5 @@ export const getUserInfo = async (): Promise<RegisteredUser> => {
 };
 
 export const logout = async (): Promise<void> => {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("isGuest");
+  localStorage.clear();
 };

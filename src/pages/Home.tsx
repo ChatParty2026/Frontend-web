@@ -138,7 +138,7 @@ const Home = () => {
             <div className="lg:col-span-5 sticky top-28 space-y-6">
               {/* p-2를 제거하고 overflow-hidden을 추가하여 카드가 박스에 딱 맞게 합니다. */}
               <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl">
-                <UserProfileCard user={user} />
+                <UserProfileCard key={user?.nickname} user={user} />
               </div>
 
               <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl">

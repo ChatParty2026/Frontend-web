@@ -46,19 +46,18 @@ export const useAuthInit = () => {
 
         // 2. 기존 토큰이 이미 있는 경우 (새로고침 등)
         if (localStorage.getItem("accessToken")) {
-          // 게스트가 아닌 경우만 사용자 정보 조회
           if (localStorage.getItem("isGuest") !== "true") {
             try {
               const userData = await getUserInfo();
               setUser(userData);
-              console.log(
-                "저장된 토큰으로 사용자 정보 조회:",
-                userData.nickname,
-              );
             } catch (error) {
               console.error("토큰이 유효하지 않음:", error);
-              localStorage.removeItem("accessToken");
-              localStorage.removeItem("refreshToken");
+              localStorage.clear();
+            }
+          } else {
+            const savedGuest = localStorage.getItem("guestInfo");
+            if (savedGuest) {
+              setUser(JSON.parse(savedGuest));
             }
           }
           setIsLoading(false);
@@ -70,6 +69,7 @@ export const useAuthInit = () => {
         localStorage.setItem("isGuest", "true");
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("guestInfo", JSON.stringify(data));
         setUser(data);
         console.log("게스트 로그인 성공:", data.nickname);
       } catch (error) {

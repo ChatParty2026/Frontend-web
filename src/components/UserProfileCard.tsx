@@ -10,11 +10,11 @@ import {
   PencilLine,
 } from "lucide-react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { AuthUser } from "../types/auth";
 
 const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
-  const [tempName, setTempName] = useState("익명의 게이머");
+  const [tempName, setTempName] = useState(user?.nickname);
   const [isEditing, setIsEditing] = useState(false);
 
   if (!user || user.role === "GUEST") {
