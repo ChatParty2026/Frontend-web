@@ -103,7 +103,7 @@ const UserProfileCard = ({ user }: { user: UserProfile | null }) => {
     75.29; // 임시 고정 승률
 
   return (
-    <div className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+    <div data-theme="dark" className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
       {/* 상단 프로필 요약 */}
       <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6">
         <div className="flex items-center justify-between">
