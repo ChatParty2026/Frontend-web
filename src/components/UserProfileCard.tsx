@@ -11,17 +11,9 @@ import {
 } from "lucide-react";
 
 import { useState } from "react";
+import type { User } from "../types/auth";
 
-interface UserProfile {
-  name: string;
-  avatar: string;
-  wins: number;
-  losses: number;
-  attendanceDays: number;
-  rank: string;
-}
-
-const UserProfileCard = ({ user }: { user: UserProfile | null }) => {
+const UserProfileCard = ({ user }: { user: User | null }) => {
   const [tempName, setTempName] = useState("익명의 게이머");
   const [isEditing, setIsEditing] = useState(false);
 
@@ -112,11 +104,11 @@ const UserProfileCard = ({ user }: { user: UserProfile | null }) => {
           <div className="flex items-center gap-4">
             <div className="avatar">
               <div className="w-16 h-16 rounded-2xl ring-4 ring-white/20 shadow-2xl">
-                <img src={user.avatar} alt={user.name} />
+                <img src={user.avatar} alt={user.nickname} />
               </div>
             </div>
             <div className="text-white">
-              <h3 className="text-xl font-bold">{user.name}</h3>
+              <h3 className="text-xl font-bold">{user.nickname}</h3>
               <div className="flex gap-2 mt-1">
                 <span className="badge badge-sm bg-white/20 border-none text-white font-bold uppercase">
                   {user.rank ?? "DIAMOND IV"}
@@ -192,7 +184,7 @@ const UserProfileCard = ({ user }: { user: UserProfile | null }) => {
                   STREAK
                 </p>
                 <p className="text-sm font-bold">
-                  {user.attendanceDays ?? 15}일 연속 출석
+                  {user.attendanceStreak ?? 15}일 연속 출석
                 </p>
               </div>
             </div>
