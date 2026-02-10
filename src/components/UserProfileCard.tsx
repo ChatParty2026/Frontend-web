@@ -12,10 +12,12 @@ import {
 
 import { useState, useEffect } from "react";
 import type { AuthUser } from "../types/auth";
+import LoginModal from "./common/LoginModal";
 
 const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
   const [tempName, setTempName] = useState(user?.nickname);
   const [isEditing, setIsEditing] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   if (!user || user.role === "GUEST") {
     return (
@@ -68,7 +70,10 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
             <strong>나만의 아바타 정하기</strong> 등이 가능합니다. 🎮
           </p>
 
-          <button className="btn btn-primary btn-block rounded-xl shadow-md gap-2">
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="btn btn-primary btn-block rounded-xl shadow-md gap-2"
+          >
             <LogIn className="w-4 h-4" />
             지금 로그인하기
           </button>
@@ -88,6 +93,11 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
             </div>
           </div>
         </div>
+
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+        />
       </div>
     );
   }

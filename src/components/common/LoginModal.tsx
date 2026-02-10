@@ -1,5 +1,6 @@
 import { X, Gamepad2 } from "lucide-react";
 import kakaoLogo from "../../assets/icons/kakao.svg";
+import { createPortal } from "react-dom";
 
 const LoginModal = ({
   isOpen,
@@ -17,7 +18,7 @@ const LoginModal = ({
       import.meta.env.VITE_API_URL + "/oauth2/authorization/google";
   };
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl transition-all duration-500">
       {/* 클럽 네온 효과 */}
       <div className="absolute w-64 h-64 bg-purple-600/30 rounded-full blur-[120px] -top-10 -left-10 animate-pulse"></div>
@@ -80,6 +81,8 @@ const LoginModal = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default LoginModal;
