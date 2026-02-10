@@ -27,7 +27,7 @@ const UserProfileCard = ({ user }: { user: UserProfile | null }) => {
 
   if (!user) {
     return (
-      <div className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+      <div data-theme="dark" className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
         {/* 상단 임시 프로필 영역 */}
         <div className="bg-base-300 p-6 flex items-center gap-4">
           <div className="avatar">
