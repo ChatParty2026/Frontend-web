@@ -37,4 +37,5 @@ export const handleGuestLogin = (data: GuestLoginResponse): void => {
 
 export const logout = async (): Promise<void> => {
   localStorage.clear();
+  window.location.href = "/";
 };
