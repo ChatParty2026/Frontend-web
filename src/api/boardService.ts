@@ -23,3 +23,7 @@ export const createPost = async (
   const response = await axiosInstance.post<PostResponse>("/post", data);
   return response.data;
 };
+
+export const deletePost = async (postId: string): Promise<void> => {
+  await axiosInstance.delete(`/post/${postId}`);
+};

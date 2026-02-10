@@ -1,4 +1,4 @@
-import { createPost, type PostResponse } from "../api/boardService";
+import { createPost, deletePost } from "../api/boardService";
 import {
   MessageSquare,
   ThumbsUp,
@@ -6,6 +6,7 @@ import {
   PenLine,
   Send,
   UserCircle,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import type { AuthUser } from "../types/auth";
@@ -82,6 +83,18 @@ const Board = ({ user }: { user: AuthUser | null }) => {
       alert("게시글 등록에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (postId: string) => {
+    if (!window.confirm("정말 이 게시글을 삭제하시겠습니까?")) return;
+
+    try {
+      await deletePost(postId);
+      setPosts((prev) => prev.filter((post) => post.id !== postId));
+    } catch (error) {
+      console.error("게시글 삭제 실패:", error);
+      alert("게시글 삭제에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -171,14 +184,27 @@ const Board = ({ user }: { user: AuthUser | null }) => {
                   </div>
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="font-bold text-gray-200 text-sm uppercase italic">
-                      {post.author}
-                    </span>
-                    <span className="text-[10px] text-gray-600 font-black uppercase tracking-widest flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {post.timestamp}
-                    </span>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-gray-200 text-sm uppercase italic">
+                        {post.author}
+                      </span>
+                      <span className="text-[10px] text-gray-600 font-black uppercase tracking-widest flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {post.timestamp}
+                      </span>
+                    </div>
+
+                    {/* ✨ 삭제 버튼: 작성자 본인에게만 표시 */}
+                    {user?.nickname === post.author && (
+                      <button
+                        onClick={() => handleDelete(post.id)}
+                        className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                        title="삭제하기"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-gray-400 text-base leading-relaxed font-medium">
                     {post.content}
