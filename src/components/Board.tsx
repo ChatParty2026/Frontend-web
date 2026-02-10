@@ -114,6 +114,14 @@ const Board = ({ user }: { user: AuthUser | null }) => {
     setIsCommentModalOpen(true);
   };
 
+  const handleCommentSuccess = (postId: string) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId ? { ...post, comments: post.comments + 1 } : post,
+      ),
+    );
+  };
+
   return (
     <div className="w-full bg-transparent text-white">
       <div className="p-6 md:p-8">
@@ -249,6 +257,7 @@ const Board = ({ user }: { user: AuthUser | null }) => {
         onClose={() => setIsCommentModalOpen(false)}
         post={selectedPost}
         user={user}
+        onCommentSuccess={handleCommentSuccess}
       />
     </div>
   );

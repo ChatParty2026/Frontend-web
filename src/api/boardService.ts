@@ -9,7 +9,7 @@ export interface CreatePostRequest {
 }
 
 export interface PostResponse {
-  id: number;
+  postId: number;
   userId: number;
   type: PostType;
   title: string;
@@ -34,7 +34,7 @@ export interface CreateCommentRequest {
 }
 
 export interface CommentResponse {
-  id: number;
+  commentId: number;
   postId: number;
   userId: number;
   content: string;
