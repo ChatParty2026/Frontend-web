@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { AuthUser } from "../types/auth";
+import CommentModal from "./common/commentModal";
 
 interface Post {
   id: string;
@@ -47,6 +48,8 @@ const Board = ({ user }: { user: AuthUser | null }) => {
   const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
   const [newPost, setNewPost] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +107,11 @@ const Board = ({ user }: { user: AuthUser | null }) => {
         post.id === postId ? { ...post, likes: post.likes + 1 } : post,
       ),
     );
+  };
+
+  const handleOpenComment = (post: Post) => {
+    setSelectedPost(post);
+    setIsCommentModalOpen(true);
   };
 
   return (
@@ -223,7 +231,10 @@ const Board = ({ user }: { user: AuthUser | null }) => {
                   />
                   <span className="text-xs font-black">{post.likes}</span>
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-pink-500/10 text-gray-500 hover:text-pink-400 transition-all group/btn">
+                <button
+                  onClick={() => handleOpenComment(post)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-pink-500/10 text-gray-500 hover:text-pink-400 transition-all group/btn cursor-pointer"
+                >
                   <MessageSquare className="w-4 h-4" />
                   <span className="text-xs font-black">{post.comments}</span>
                 </button>
@@ -232,6 +243,13 @@ const Board = ({ user }: { user: AuthUser | null }) => {
           ))}
         </div>
       </div>
+
+      <CommentModal
+        isOpen={isCommentModalOpen}
+        onClose={() => setIsCommentModalOpen(false)}
+        post={selectedPost}
+        user={user}
+      />
     </div>
   );
 };
