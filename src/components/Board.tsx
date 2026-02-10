@@ -37,7 +37,7 @@ const MOCK_POSTS: Post[] = [
     author: "초보플레이어",
     authorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=newbie",
     content:
-      "그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!",
+      "그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!그림 맞추기 게임 처음 해봤는데 너무 어려워요 ㅠㅠ 팁 좀 알려주세요!",
     likes: 8,
     comments: 7,
     timestamp: "15분 전",
@@ -45,6 +45,7 @@ const MOCK_POSTS: Post[] = [
 ];
 
 const MAX_CONTENT_LENGTH = 5000;
+const MAX_DISPLAY_LENGTH = 350;
 
 const Board = ({ user }: { user: AuthUser | null }) => {
   const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
@@ -105,6 +106,12 @@ const Board = ({ user }: { user: AuthUser | null }) => {
       console.error("게시글 삭제 실패:", error);
       alert("게시글 삭제에 실패했습니다. 다시 시도해주세요.");
     }
+  };
+
+  // 헬퍼 함수: 텍스트 요약
+  const truncateContent = (content: string) => {
+    if (content.length <= MAX_DISPLAY_LENGTH) return content;
+    return content.slice(0, MAX_DISPLAY_LENGTH) + "...";
   };
 
   const handleLike = (postId: string) => {
@@ -232,9 +239,20 @@ const Board = ({ user }: { user: AuthUser | null }) => {
                       </button>
                     )}
                   </div>
-                  <p className="text-gray-400 text-base leading-relaxed font-medium">
-                    {post.content}
-                  </p>
+
+                  <div
+                    className="cursor-pointer group/content"
+                    onClick={() => handleOpenComment(post)} // 클릭 시 모달 오픈 (전체 내용 확인 가능)
+                  >
+                    <p className="text-gray-400 text-base leading-relaxed font-medium">
+                      {truncateContent(post.content)}
+                    </p>
+                    {post.content.length > MAX_DISPLAY_LENGTH && (
+                      <span className="text-xs text-purple-400 font-bold mt-2 inline-block opacity-0 group-hover/content:opacity-100 transition-opacity">
+                        더 보기
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
