@@ -33,11 +33,7 @@ export const useAuthInit = () => {
           );
 
           // 파라미터 제거 (주소창 정리)
-          window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname,
-          );
+          window.history.replaceState({}, document.title, "/");
 
           // 구글 로그인 성공 후 사용자 정보 조회
           try {

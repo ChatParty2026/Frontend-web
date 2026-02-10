@@ -2,23 +2,51 @@ import { X, Send, Image as ImageIcon, Smile, MapPin } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useState } from "react";
 import type { AuthUser } from "../../types/auth";
+import { createComment } from "../../api/boardService";
 
 interface CommentModalProps {
   isOpen: boolean;
   onClose: () => void;
   post: {
+    id: string;
     author: string;
     authorAvatar: string;
     content: string;
     timestamp: string;
   } | null;
   user: AuthUser | null;
+  onCommentSuccess?: (postId: string) => void;
 }
 
-const CommentModal = ({ isOpen, onClose, post, user }: CommentModalProps) => {
+const CommentModal = ({
+  isOpen,
+  onClose,
+  post,
+  user,
+  onCommentSuccess,
+}: CommentModalProps) => {
   const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen || !post) return null;
+
+  const handlePostComment = async () => {
+    if (!comment.trim() || !user || isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      await createComment({ postId: Number(post.id), content: comment });
+
+      setComment("");
+      if (onCommentSuccess) onCommentSuccess(post.id);
+      onClose();
+    } catch (error: any) {
+      console.error("댓글 작성 실패:", error);
+      alert("댓글 등록에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const modalContent = (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -97,10 +125,15 @@ const CommentModal = ({ isOpen, onClose, post, user }: CommentModalProps) => {
         {/* 하단 푸터 (게시 버튼) */}
         <div className="p-4 flex items-center justify-end border-t border-white/5 bg-[#181818]">
           <button
-            disabled={!comment.trim()}
+            onClick={handlePostComment}
+            disabled={!comment.trim() || isSubmitting}
             className="btn border-none bg-white text-black hover:bg-zinc-200 rounded-full px-6 min-h-0 h-10 font-bold disabled:opacity-30 transition-all"
           >
-            게시
+            {isSubmitting ? (
+              <span className="loading loading-spinner loading-xs"></span>
+            ) : (
+              "게시"
+            )}
           </button>
         </div>
       </div>
