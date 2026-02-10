@@ -44,6 +44,8 @@ const MOCK_POSTS: Post[] = [
   },
 ];
 
+const MAX_CONTENT_LENGTH = 5000;
+
 const Board = ({ user }: { user: AuthUser | null }) => {
   const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
   const [newPost, setNewPost] = useState("");
@@ -54,6 +56,10 @@ const Board = ({ user }: { user: AuthUser | null }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPost.trim() || !user || isSubmitting) return;
+    if (newPost.length > MAX_CONTENT_LENGTH) {
+      alert(`내용은 최대 ${MAX_CONTENT_LENGTH}자까지 입력 가능합니다.`);
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -158,13 +164,17 @@ const Board = ({ user }: { user: AuthUser | null }) => {
                   <textarea
                     value={newPost}
                     onChange={(e) => setNewPost(e.target.value)}
+                    maxLength={MAX_CONTENT_LENGTH}
                     placeholder="무슨 생각을 하고 계신가요?"
                     className="w-full bg-transparent border-none focus:ring-0 text-white placeholder:text-gray-600 resize-none min-h-[80px] text-lg font-medium"
                   />
                   <div className="flex justify-end items-center gap-4">
-                    <span className="text-xs text-gray-600 font-bold uppercase tracking-tighter">
-                      Press enter to post
-                    </span>
+                    {newPost.length >= MAX_CONTENT_LENGTH && (
+                      <span className="text-[10px] text-red-500 font-black uppercase tracking-tighter animate-pulse flex items-center gap-1">
+                        <span className="w-1 h-1 bg-red-500 rounded-full" />
+                        최대 글자 수(5,000자)에 도달했습니다.
+                      </span>
+                    )}
                     <button
                       type="submit"
                       disabled={!newPost.trim()}
