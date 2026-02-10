@@ -127,25 +127,36 @@ const Home = () => {
             </div>
           </section>
 
-          {/* Community Section */}
-          <div className="grid lg:grid-cols-12 gap-8 items-start">
-            {/* 왼쪽: 게시판 (다크 테마에 맞춰 투명도 조절) */}
-            <div className="lg:col-span-7 bg-white/5 rounded-[2.5rem] border border-white/10 p-2 backdrop-blur-sm">
-              <Board user={user} />
-            </div>
-
-            {/* 오른쪽: 프로필 & 채팅 */}
-            <div className="lg:col-span-5 sticky top-28 space-y-6">
-              {/* p-2를 제거하고 overflow-hidden을 추가하여 카드가 박스에 딱 맞게 합니다. */}
-              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl">
-                <UserProfileCard key={user?.nickname} user={user} />
-              </div>
-
-              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl">
+          {/* 3. 상단 레이아웃: 채팅과 프로필의 높이를 동일하게 (items-stretch) */}
+          <div className="grid lg:grid-cols-12 gap-8 mb-20 items-stretch">
+            <div className="lg:col-span-8">
+              {/* h-full을 주어 부모 그리드의 높이를 꽉 채우게 합니다 */}
+              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-full">
                 <LiveChat />
               </div>
             </div>
+            
+            <div className="lg:col-span-4 flex flex-col">
+              {/* 프로필 카드가 담긴 컨테이너 */}
+              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-full">
+                <UserProfileCard key={user?.nickname} user={user} />
+              </div>
+            </div>
           </div>
+
+          {/* 4. 하단 레이아웃: 게시판이 전체 너비 차지 */}
+          <section className="w-full">
+            <div className="flex items-center gap-3 mb-8">
+              <h2 className="text-3xl font-black italic tracking-tight">
+                COMMUNITY 💬
+              </h2>
+              <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+            </div>
+
+            <div className="bg-white/5 rounded-[2.5rem] border border-white/10 p-2 backdrop-blur-sm">
+              <Board user={user} />
+            </div>
+          </section>
         </div>
       </main>
     </div>

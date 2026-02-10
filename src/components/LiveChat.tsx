@@ -83,7 +83,7 @@ const LiveChat = () => {
   };
 
   return (
-    <div className="w-full h-[600px] flex flex-col bg-transparent">
+    <div className="w-full h-full flex flex-col bg-transparent">
       {/* 헤더 섹션 */}
       <div className="p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
         <div className="flex items-center gap-3">
