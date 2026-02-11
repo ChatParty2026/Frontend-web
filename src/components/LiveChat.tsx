@@ -63,7 +63,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
           gameType: "MAIN",
           roomId: "main",
           sender: nickname,
-        })
+        }),
       );
       console.log("✅ WebSocket connected:", nickname);
     };
@@ -104,7 +104,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
           const { data } = await axios.post(
             `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
             {},
-            { headers: { Authorization: `Bearer ${refreshToken}` } }
+            { headers: { Authorization: `Bearer ${refreshToken}` } },
           );
 
           localStorage.setItem("accessToken", data.accessToken);
@@ -146,15 +146,16 @@ const LiveChat = ({ user }: LiveChatProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // socketRef.current.readyState === WebSocket.OPEN 조건을 추가하여 
+
+    // socketRef.current.readyState === WebSocket.OPEN 조건을 추가하여
     // 연결 중(CONNECTING)일 때 send가 호출되는 것을 방지합니다.
     if (
-      !newMessage.trim() || 
-      !socketRef.current || 
-      socketRef.current.readyState !== WebSocket.OPEN || 
+      !newMessage.trim() ||
+      !socketRef.current ||
+      socketRef.current.readyState !== WebSocket.OPEN ||
       !currentNickname
-    ) return;
+    )
+      return;
 
     socketRef.current.send(
       JSON.stringify({
@@ -163,7 +164,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
         roomId: "main",
         sender: currentNickname,
         message: newMessage,
-      })
+      }),
     );
 
     setNewMessage("");
@@ -178,7 +179,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
   return (
     <div className="w-full h-full flex flex-col bg-transparent">
       {/* 헤더 섹션 */}
-      <div className="p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
+      <div className="shrink-0 p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-pink-500/10 rounded-lg">
             <MessageCircle className="w-5 h-5 text-pink-500" />
@@ -198,8 +199,11 @@ const LiveChat = ({ user }: LiveChatProps) => {
         </div>
       </div>
 
-  
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+      {/* 채팅 메시지 영역 */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide"
+      >
         {messages.map((msg) => {
           const isMe = msg.author === currentNickname;
           const isGuestAuthor = isMe
@@ -267,7 +271,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
       </div>
 
       {/* 입력 섹션 */}
-      <div className="p-6 bg-white/5 border-t border-white/5">
+      <div className="shrink-0 p-6 bg-white/5 border-t border-white/5">
         <form onSubmit={handleSubmit} className="relative group">
           <input
             type="text"
