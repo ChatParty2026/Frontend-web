@@ -114,7 +114,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
   return (
     <div className="w-full h-full flex flex-col bg-transparent">
       {/* 헤더 섹션 */}
-      <div className="p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
+      <div className="shrink-0 p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-pink-500/10 rounded-lg">
             <MessageCircle className="w-5 h-5 text-pink-500" />
@@ -203,7 +203,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
       </div>
 
       {/* 입력 섹션 */}
-      <div className="p-6 bg-white/5 border-t border-white/5">
+      <div className="shrink-0 p-6 bg-white/5 border-t border-white/5">
         <form onSubmit={handleSubmit} className="relative group">
           <input
             type="text"
