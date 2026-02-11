@@ -37,6 +37,19 @@ const LiveChat = ({ user }: LiveChatProps) => {
 
   const currentNickname = user?.nickname;
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      // 컨테이너의 맨 위 위치를 (전체 높이 - 현재 보여지는 높이)로 설정
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   useEffect(() => {
     // 닉네임이 없으면 소켓 연결을 시도하지 않음 (로드 대기)
     if (!currentNickname) return;
@@ -135,7 +148,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
       </div>
 
       {/* 채팅 메시지 영역 */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
         {messages.map((msg) => {
           const isMe = msg.author === currentNickname;
           // 게스트 유저인지 판별 (내 메시지인 경우 user.role 참고, 남의 메시지는 닉네임 패턴으로 판별 가능)
