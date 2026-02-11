@@ -1,4 +1,4 @@
-import { Send, Users, MessageCircle } from "lucide-react";
+import { Send, MessageCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface ChatMessage {
