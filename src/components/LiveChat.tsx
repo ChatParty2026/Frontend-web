@@ -1,6 +1,7 @@
 import { Send, MessageCircle, UserCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import type { AuthUser } from "../types/auth";
+import axios from "axios";
 
 interface ChatMessage {
   id: string;
@@ -11,7 +12,6 @@ interface ChatMessage {
   isSystem?: boolean;
 }
 
-// 초기 환영 메시지 정의
 const MOCK_MESSAGES: ChatMessage[] = [
   {
     id: "welcome-msg",
@@ -28,7 +28,6 @@ interface LiveChatProps {
 }
 
 const LiveChat = ({ user }: LiveChatProps) => {
-  // 초기값을 MOCK_MESSAGES로 설정하여 첫 진입 시 보여줍니다.
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
   const [newMessage, setNewMessage] = useState("");
   const [onlineCount, setOnlineCount] = useState(0);
@@ -37,26 +36,23 @@ const LiveChat = ({ user }: LiveChatProps) => {
 
   const currentNickname = user?.nickname;
 
-  useEffect(() => {
-    // 닉네임이 없으면 소켓 연결을 시도하지 않음 (로드 대기)
-    if (!currentNickname) return;
-
-    console.log("📡 웹소켓 연결 시도:", currentNickname);
-
-    const ws = new WebSocket(import.meta.env.VITE_WS_URL);
+  // -----------------------------
+  // WebSocket 연결 함수
+  // -----------------------------
+  const connect = (token: string, nickname: string) => {
+    const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}?token=${token}`);
     socketRef.current = ws;
 
     ws.onopen = () => {
-      // 3. 연결 성공 시 현재 닉네임으로 JOIN
-      const joinMessage = {
-        type: "JOIN",
-        gameType: "MAIN",
-        roomId: "main",
-        sender: currentNickname,
-      };
-
-      console.log("📤 JOIN 메시지 전송:", joinMessage);
-      ws.send(JSON.stringify(joinMessage));
+      ws.send(
+        JSON.stringify({
+          type: "JOIN",
+          gameType: "MAIN",
+          roomId: "main",
+          sender: nickname,
+        })
+      );
+      console.log("✅ WebSocket connected:", nickname);
     };
 
     ws.onmessage = (event) => {
@@ -83,17 +79,69 @@ const LiveChat = ({ user }: LiveChatProps) => {
       }
     };
 
+    ws.onclose = async (event) => {
+      console.log("🔌 WebSocket closed:", event.code);
+
+      // 토큰 만료 시 (서버에서 4001 코드 보낸다고 가정)
+      if (event.code === 4001) {
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (!refreshToken) return;
+
+        try {
+          const { data } = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
+            {},
+            { headers: { Authorization: `Bearer ${refreshToken}` } }
+          );
+
+          localStorage.setItem("accessToken", data.accessToken);
+          localStorage.setItem("refreshToken", data.refreshToken);
+
+          // 재귀 호출로 재연결
+          connect(data.accessToken, nickname);
+        } catch {
+          localStorage.clear();
+          window.location.href = "/";
+        }
+      }
+    };
+
+    ws.onerror = (err) => console.log("⚠️ WebSocket error:", err);
+  };
+
+  // -----------------------------
+  // useEffect: 닉네임 확인 + connect 호출
+  // -----------------------------
+  useEffect(() => {
+    if (!currentNickname) return;
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    connect(token, currentNickname);
+
     return () => {
-      console.log("🔌 소켓 연결 종료:", currentNickname);
-      ws.close();
+      console.log("🧹 Cleaning up WebSocket");
+      socketRef.current?.close();
       socketRef.current = null;
     };
   }, [currentNickname]);
 
+  // -----------------------------
+  // 메시지 전송
+  // -----------------------------
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // 닉네임이 없으면 전송 불가 처리
-    if (!newMessage.trim() || !socketRef.current || !currentNickname) return;
+    
+    // socketRef.current.readyState === WebSocket.OPEN 조건을 추가하여 
+    // 연결 중(CONNECTING)일 때 send가 호출되는 것을 방지합니다.
+    if (
+      !newMessage.trim() || 
+      !socketRef.current || 
+      socketRef.current.readyState !== WebSocket.OPEN || 
+      !currentNickname
+    ) return;
 
     socketRef.current.send(
       JSON.stringify({
@@ -102,7 +150,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
         roomId: "main",
         sender: currentNickname,
         message: newMessage,
-      }),
+      })
     );
 
     setNewMessage("");
@@ -111,9 +159,12 @@ const LiveChat = ({ user }: LiveChatProps) => {
   if (!user)
     return <div className="p-10 text-center text-gray-500">Connecting...</div>;
 
+  // -----------------------------
+  // JSX 렌더링
+  // -----------------------------
   return (
     <div className="w-full h-full flex flex-col bg-transparent">
-      {/* 헤더 섹션 */}
+      {/* 헤더 */}
       <div className="p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-pink-500/10 rounded-lg">
@@ -134,11 +185,10 @@ const LiveChat = ({ user }: LiveChatProps) => {
         </div>
       </div>
 
-      {/* 채팅 메시지 영역 */}
+      {/* 메시지 영역 */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
         {messages.map((msg) => {
           const isMe = msg.author === currentNickname;
-          // 게스트 유저인지 판별 (내 메시지인 경우 user.role 참고, 남의 메시지는 닉네임 패턴으로 판별 가능)
           const isGuestAuthor = isMe
             ? user.role === "GUEST"
             : msg.author.startsWith("G");
@@ -155,7 +205,6 @@ const LiveChat = ({ user }: LiveChatProps) => {
                 <div
                   className={`flex gap-3 ${isMe ? "flex-row-reverse" : "flex-row"}`}
                 >
-                  {/* 아바타 영역 */}
                   <div className="avatar shrink-0">
                     <div className="w-9 h-9 rounded-xl border border-white/10 ring-1 ring-white/5 overflow-hidden bg-white/5 flex items-center justify-center">
                       {isGuestAuthor ? (
@@ -170,7 +219,9 @@ const LiveChat = ({ user }: LiveChatProps) => {
                   </div>
 
                   <div
-                    className={`flex flex-col space-y-1.5 max-w-[75%] ${isMe ? "items-end" : "items-start"}`}
+                    className={`flex flex-col space-y-1.5 max-w-[75%] ${
+                      isMe ? "items-end" : "items-start"
+                    }`}
                   >
                     <div className="flex items-center gap-2 px-1">
                       <span className="text-[10px] font-black text-gray-400 uppercase italic">
@@ -202,7 +253,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 입력 섹션 */}
+      {/* 입력 */}
       <div className="p-6 bg-white/5 border-t border-white/5">
         <form onSubmit={handleSubmit} className="relative group">
           <input
