@@ -60,7 +60,7 @@ const Board = ({ user }: { user: AuthUser | null }) => {
 
       const authorAvatar = user.role === "USER" ? user.avatar : "GUEST";
       const formattedPost: Post = {
-        id: response.id.toString(),
+        id: response.postId.toString(),
         author: user.nickname,
         authorAvatar: authorAvatar,
         content: response.content,
