@@ -19,14 +19,14 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
+  const cardClass =
+    "card bg-base-100 shadow-sm border border-base-200 overflow-hidden h-full flex flex-col";
+
   if (!user || user.role === "GUEST") {
     return (
-      <div
-        data-theme="dark"
-        className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden"
-      >
-        {/* 상단 임시 프로필 영역 */}
-        <div className="bg-base-300 p-6 flex items-center gap-4">
+      <div data-theme="dark" className={cardClass}>
+        {/* 상단 영역 (고정) */}
+        <div className="bg-base-300 p-6 flex items-center gap-4 shrink-0">
           <div className="avatar">
             <div className="w-16 h-16 rounded-2xl bg-base-100 flex items-center justify-center text-base-content/20 shadow-inner">
               <UserCircle className="w-10 h-10" />
@@ -64,11 +64,14 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
           </div>
         </div>
 
-        <div className="card-body p-6 text-center space-y-4">
-          <p className="text-sm text-base-content/70 leading-relaxed">
-            로그인을 하시면 더 다양한 기능과 <br />
-            <strong>나만의 아바타 정하기</strong> 등이 가능합니다. 🎮
-          </p>
+        {/* 바디 영역 */}
+        <div className="card-body p-6 text-center space-y-4 flex-1 flex flex-col justify-center">
+          <div className="flex h-full items-center">
+            <p className="text-sm text-base-content/70 leading-relaxed ">
+              로그인을 하시면 더 다양한 기능과 <br />
+              <strong>나만의 아바타 정하기</strong> 등이 가능합니다. 🎮
+            </p>
+          </div>
 
           <button
             onClick={() => setShowLoginModal(true)}
@@ -104,14 +107,10 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
 
   const totalGames = user.wins + user.losses;
   const winRate =
-    // totalGames > 0 ? Math.round((user.wins / totalGames) * 100) : 0;
-    75.29; // 임시 고정 승률
+    totalGames > 0 ? Math.round((user.wins / totalGames) * 100) : 0;
 
   return (
-    <div
-      data-theme="dark"
-      className="card bg-base-100 shadow-sm border border-base-200 overflow-hidden"
-    >
+    <div data-theme="dark" className={cardClass}>
       {/* 상단 프로필 요약 */}
       <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6">
         <div className="flex items-center justify-between">
@@ -146,7 +145,7 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
         </div>
       </div>
 
-      <div className="card-body p-5 space-y-6">
+      <div className="card-body p-5 space-y-6 flex-1">
         {/* 핵심 스탯 (승/패/승률) */}
         <div className="grid grid-cols-3 gap-2">
           <div className="text-center">
@@ -222,9 +221,11 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
           </div>
         </div>
 
-        <button className="btn btn-outline btn-sm w-full mt-2 rounded-xl">
-          전적 상세 보기
-        </button>
+        <div className="mt-auto">
+          <button className="btn btn-outline btn-sm w-full mt-2 rounded-xl">
+            전적 상세 보기
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -36,6 +36,19 @@ const LiveChat = ({ user }: LiveChatProps) => {
 
   const currentNickname = user?.nickname;
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      // 컨테이너의 맨 위 위치를 (전체 높이 - 현재 보여지는 높이)로 설정
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   // -----------------------------
   // WebSocket 연결 함수
   // -----------------------------
@@ -164,7 +177,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
   // -----------------------------
   return (
     <div className="w-full h-full flex flex-col bg-transparent">
-      {/* 헤더 */}
+      {/* 헤더 섹션 */}
       <div className="p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-pink-500/10 rounded-lg">
@@ -185,7 +198,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
         </div>
       </div>
 
-      {/* 메시지 영역 */}
+  
       <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
         {messages.map((msg) => {
           const isMe = msg.author === currentNickname;
@@ -253,7 +266,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 입력 */}
+      {/* 입력 섹션 */}
       <div className="p-6 bg-white/5 border-t border-white/5">
         <form onSubmit={handleSubmit} className="relative group">
           <input

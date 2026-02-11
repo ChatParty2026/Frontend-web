@@ -131,14 +131,14 @@ const Home = () => {
           <div className="grid lg:grid-cols-12 gap-8 mb-20 items-stretch">
             <div className="lg:col-span-8">
               {/* h-full을 주어 부모 그리드의 높이를 꽉 채우게 합니다 */}
-              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-full">
+              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-[600px]">
                 <LiveChat user={user} />
               </div>
             </div>
 
-            <div className="lg:col-span-4 flex flex-col">
+            <div className="lg:col-span-4">
               {/* 프로필 카드가 담긴 컨테이너 */}
-              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-full">
+              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-[600px]">
                 <UserProfileCard key={user?.nickname} user={user} />
               </div>
             </div>
