@@ -43,7 +43,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
 
     console.log("📡 웹소켓 연결 시도:", currentNickname);
 
-    const ws = new WebSocket("ws://58.238.182.100:9001/ws");
+    const ws = new WebSocket(import.meta.env.VITE_WS_URL);
     socketRef.current = ws;
 
     ws.onopen = () => {
