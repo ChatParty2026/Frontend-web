@@ -1,5 +1,5 @@
 import { Send, MessageCircle, UserCircle } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { AuthUser } from "../types/auth";
 import axios from "axios";
 
@@ -32,22 +32,20 @@ const LiveChat = ({ user }: LiveChatProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [onlineCount, setOnlineCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
 
   const currentNickname = user?.nickname;
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
-      // 컨테이너의 맨 위 위치를 (전체 높이 - 현재 보여지는 높이)로 설정
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   // -----------------------------
   // WebSocket 연결 함수
