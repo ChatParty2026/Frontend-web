@@ -150,7 +150,7 @@ const GameRoomsView = () => {
             </div>
 
             {/* 방 만들기 버튼 */}
-            <button className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-2xl font-bold hover:bg-purple-500 hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0">
+            <button className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-2xl font-bold hover:bg-purple-500 hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0 cursor-pointer">
               <Plus className="w-5 h-5" />
               <span>방 만들기</span>
             </button>
