@@ -1,5 +1,8 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, Users, Lock, PlayCircle } from "lucide-react";
+import { Plus, Search, Users, Lock, PlayCircle, Filter } from "lucide-react";
+
+// 탭 타입 정의
+type GameTypeFilter = "전체" | "마피아" | "라이어";
 
 interface Room {
   id: number;
@@ -56,24 +59,31 @@ const MOCK_ROOMS: Room[] = [
 ];
 
 const GameRoomsView = () => {
-  const [activeTab, setActiveTab] = useState("전체");
+  const [statusTab, setStatusTab] = useState("전체");
+  const [gameTypeTab, setGameTypeTab] = useState<GameTypeFilter>("전체");
   const [searchQuery, setSearchQuery] = useState("");
 
   // 필터링 로직
   const filteredRooms = useMemo(() => {
     return MOCK_ROOMS.filter((room) => {
-      const matchesTab =
-        activeTab === "전체" ||
-        (activeTab === "대기중" && room.status === "WAITING") ||
-        (activeTab === "플레이중" && room.status === "PLAYING");
+      // 1. 상태 필터 (전체/대기중/플레이중)
+      const matchesStatus =
+        statusTab === "전체" ||
+        (statusTab === "대기중" && room.status === "WAITING") ||
+        (statusTab === "플레이중" && room.status === "PLAYING");
 
+      // 2. 게임 타입 필터 (전체/마피아/라이어)
+      const matchesGameType =
+        gameTypeTab === "전체" || room.gameType === gameTypeTab;
+
+      // 3. 검색어 필터
       const matchesSearch = room.title
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
 
-      return matchesTab && matchesSearch;
+      return matchesStatus && matchesGameType && matchesSearch;
     });
-  }, [activeTab, searchQuery]);
+  }, [statusTab, gameTypeTab, searchQuery]);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-8">
@@ -86,20 +96,43 @@ const GameRoomsView = () => {
             </h1>
 
             {/* 탭 메뉴 */}
-            <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10 w-fit">
-              {["전체", "대기중", "플레이중"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                    activeTab === tab
-                      ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                      : "text-gray-500 hover:text-white"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            <div className="flex flex-col gap-4">
+              {/* 기존 상태 필터 */}
+              <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10 w-fit">
+                {["전체", "대기중", "플레이중"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setStatusTab(tab)}
+                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
+                      statusTab === tab
+                        ? "bg-white/10 text-white shadow-lg"
+                        : "text-gray-500 hover:text-white"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* 신규: 게임 타입 필터 (마피아/라이어) */}
+              <div className="flex items-center gap-3">
+                <Filter className="w-4 h-4 text-purple-500" />
+                <div className="flex gap-2">
+                  {(["전체", "마피아", "라이어"] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setGameTypeTab(type)}
+                      className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${
+                        gameTypeTab === type
+                          ? "bg-purple-600 border-purple-500 text-white"
+                          : "bg-transparent border-white/10 text-gray-500 hover:border-white/20"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
