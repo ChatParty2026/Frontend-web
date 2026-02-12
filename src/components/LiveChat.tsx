@@ -31,12 +31,23 @@ const LiveChat = ({ user }: LiveChatProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
   const [newMessage, setNewMessage] = useState("");
   const [onlineCount, setOnlineCount] = useState(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const isMyMessageRef = useRef(false);
 
   const currentNickname = user?.nickname;
+
+  // 스크롤 위치 계산 함수
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      // 바닥에서 50px 이내에 있으면 최하단으로 간주 (여유값 부여)
+      const bottom = scrollHeight - scrollTop <= clientHeight + 50;
+      setIsAtBottom(bottom);
+    }
+  };
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
@@ -47,11 +58,13 @@ const LiveChat = ({ user }: LiveChatProps) => {
   }, []);
 
   useEffect(() => {
-    if (isMyMessageRef.current) {
+    // 1. 내가 메시지를 보냈거나
+    // 2. 남이 보냈는데 사용자가 이미 최하단에 있었을 경우
+    if (isMyMessageRef.current || isAtBottom) {
       scrollToBottom();
-      isMyMessageRef.current = false; // 스크롤 후 플래그 초기화
+      isMyMessageRef.current = false;
     }
-  }, [messages, scrollToBottom]);
+  }, [messages, isAtBottom, scrollToBottom]);
 
   // -----------------------------
   // WebSocket 연결 함수
@@ -210,6 +223,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
       {/* 채팅 메시지 영역 */}
       <div
         ref={scrollRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide scroll-smooth pb-0"
       >
         {messages.map((msg) => {
