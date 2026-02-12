@@ -1,4 +1,6 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
+import GameRoomsView from "./pages/GameRoomsView";
 import { useAuthInit } from "./hooks/useAuthInit";
 
 const App = () => {
@@ -15,7 +17,20 @@ const App = () => {
     );
   }
 
-  return <Home />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* 메인 페이지 */}
+        <Route path="/" element={<Home />} />
+
+        {/* 방 목록 페이지 (새 창으로 열릴 곳) */}
+        <Route path="/rooms" element={<GameRoomsView />} />
+
+        {/* 정의되지 않은 경로 접근 시 홈으로 리다이렉트 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
 };
 
 export default App;
