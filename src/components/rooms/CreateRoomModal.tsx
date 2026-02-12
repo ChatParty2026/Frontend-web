@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X, Lock, Unlock, Users, Gamepad2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -7,11 +8,21 @@ interface CreateRoomModalProps {
 }
 
 const CreateRoomModal = ({ isOpen, onClose }: CreateRoomModalProps) => {
+  const navigate = useNavigate();
   const [roomTitle, setRoomTitle] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [password, setPassword] = useState("");
   const [gameType, setGameType] = useState<"마피아" | "라이어">("마피아");
   const [maxPlayers, setMaxPlayers] = useState(8);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // 1. 여기서 원래 API를 호출하여 방을 생성합니다.
+    // 2. 생성 성공 후 반환된 roomId로 이동합니다.
+    const mockRoomId = Math.floor(Math.random() * 1000);
+    navigate(`/waiting/${mockRoomId}`);
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -32,7 +43,7 @@ const CreateRoomModal = ({ isOpen, onClose }: CreateRoomModalProps) => {
           </button>
         </div>
 
-        <form className="p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
           {/* 와이어프레임 1: 방 제목 */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest ml-1">

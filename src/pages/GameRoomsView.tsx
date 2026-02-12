@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Plus, Search, Users, Lock, PlayCircle, Filter } from "lucide-react";
 import CreateRoomModal from "../components/rooms/CreateRoomModal";
+import { useNavigate } from "react-router-dom";
 
 // 탭 타입 정의
 type GameTypeFilter = "전체" | "마피아" | "라이어";
@@ -60,6 +61,7 @@ const MOCK_ROOMS: Room[] = [
 ];
 
 const GameRoomsView = () => {
+  const navigate = useNavigate();
   const [statusTab, setStatusTab] = useState("전체");
   const [gameTypeTab, setGameTypeTab] = useState<GameTypeFilter>("전체");
   const [searchQuery, setSearchQuery] = useState("");
@@ -167,6 +169,7 @@ const GameRoomsView = () => {
           {filteredRooms.map((room) => (
             <div
               key={room.id}
+              onClick={() => navigate(`/waiting/${room.id}`)}
               className="group relative bg-[#121212] border border-white/5 rounded-[2rem] p-6 hover:border-purple-500/30 transition-all cursor-pointer overflow-hidden shadow-2xl"
             >
               <div className="flex justify-between items-start mb-6">
