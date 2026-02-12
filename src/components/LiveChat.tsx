@@ -200,7 +200,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
       {/* 채팅 메시지 영역 */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide"
+        className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide scroll-smooth"
       >
         {messages.map((msg) => {
           const isMe = msg.author === currentNickname;
