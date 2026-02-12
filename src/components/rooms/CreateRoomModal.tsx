@@ -43,7 +43,7 @@ const CreateRoomModal = ({ isOpen, onClose }: CreateRoomModalProps) => {
               value={roomTitle}
               onChange={(e) => setRoomTitle(e.target.value)}
               placeholder="방 제목을 입력하세요"
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-sm focus:outline-none focus:border-purple-500 transition-all placeholder:text-gray-700"
+              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-sm focus:outline-none focus:border-purple-500 transition-all placeholder:text-gray-600"
             />
           </div>
 
@@ -72,7 +72,7 @@ const CreateRoomModal = ({ isOpen, onClose }: CreateRoomModalProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={isPrivate ? "비밀번호 입력" : "공개 방입니다"}
-              className={`w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-sm focus:outline-none focus:border-pink-500 transition-all placeholder:text-gray-700 ${!isPrivate && "opacity-30 cursor-not-allowed"}`}
+              className={`w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 text-sm focus:outline-none focus:border-pink-500 transition-all placeholder:text-gray-600 ${!isPrivate && "opacity-50 cursor-not-allowed"}`}
             />
           </div>
 
