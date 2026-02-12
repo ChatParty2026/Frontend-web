@@ -34,17 +34,23 @@ const LiveChat = ({ user }: LiveChatProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const isMyMessageRef = useRef(false);
 
   const currentNickname = user?.nickname;
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+      });
     }
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    if (isMyMessageRef.current) {
+      scrollToBottom();
+      isMyMessageRef.current = false; // 스크롤 후 플래그 초기화
+    }
   }, [messages, scrollToBottom]);
 
   // -----------------------------
@@ -145,8 +151,6 @@ const LiveChat = ({ user }: LiveChatProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // socketRef.current.readyState === WebSocket.OPEN 조건을 추가하여
-    // 연결 중(CONNECTING)일 때 send가 호출되는 것을 방지합니다.
     if (
       !newMessage.trim() ||
       !socketRef.current ||
@@ -154,6 +158,9 @@ const LiveChat = ({ user }: LiveChatProps) => {
       !currentNickname
     )
       return;
+
+    // 플래그를 true로 설정하여 useEffect가 스크롤을 내리도록 유도
+    isMyMessageRef.current = true;
 
     socketRef.current.send(
       JSON.stringify({
@@ -164,6 +171,9 @@ const LiveChat = ({ user }: LiveChatProps) => {
         message: newMessage,
       }),
     );
+
+    // 참고: 서버에서 CHAT 타입을 다시 쏴주면 onmessage에서 messages가 업데이트되고,
+    // 그때 위 useEffect가 실행됩니다.
 
     setNewMessage("");
   };
@@ -200,7 +210,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
       {/* 채팅 메시지 영역 */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide scroll-smooth"
+        className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide scroll-smooth pb-0"
       >
         {messages.map((msg) => {
           const isMe = msg.author === currentNickname;
