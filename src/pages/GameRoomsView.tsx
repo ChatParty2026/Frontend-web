@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Plus, Search, Users, Lock, PlayCircle, Filter } from "lucide-react";
+import CreateRoomModal from "../components/rooms/CreateRoomModal";
 
 // 탭 타입 정의
 type GameTypeFilter = "전체" | "마피아" | "라이어";
@@ -62,6 +63,7 @@ const GameRoomsView = () => {
   const [statusTab, setStatusTab] = useState("전체");
   const [gameTypeTab, setGameTypeTab] = useState<GameTypeFilter>("전체");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
 
   // 필터링 로직
   const filteredRooms = useMemo(() => {
@@ -150,7 +152,10 @@ const GameRoomsView = () => {
             </div>
 
             {/* 방 만들기 버튼 */}
-            <button className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-2xl font-bold hover:bg-purple-500 hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0 cursor-pointer">
+            <button
+              onClick={() => setIsCreateRoomModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-2xl font-bold hover:bg-purple-500 hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0 cursor-pointer"
+            >
               <Plus className="w-5 h-5" />
               <span>방 만들기</span>
             </button>
@@ -220,6 +225,11 @@ const GameRoomsView = () => {
           </div>
         )}
       </div>
+
+      <CreateRoomModal
+        isOpen={isCreateRoomModalOpen}
+        onClose={() => setIsCreateRoomModalOpen(false)}
+      />
     </div>
   );
 };
