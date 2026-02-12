@@ -28,6 +28,12 @@ const GameWaitingRoom = () => {
     }
   };
 
+  const handleStartGame = () => {
+    // 실제로는 방장 여부 체크 후 이동
+    const roomId = 1; // 임시 roomId
+    navigate(`/game/liar/${roomId}`); // roomId는 useParams()로 가져온 값
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-6 flex items-center justify-center">
       <div className="container max-w-6xl w-full h-[800px] bg-[#121212] rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
@@ -143,7 +149,10 @@ const GameWaitingRoom = () => {
                   Room Settings
                 </button>
                 {/* 와이어프레임 우측 상단 '게임시작' 버튼의 존재감을 하단 메인 액션으로 배치 */}
-                <button className="flex-[2] h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center gap-3 font-black italic hover:scale-[1.02] transition-all shadow-[0_0_30px_rgba(168,85,247,0.3)] uppercase tracking-wider">
+                <button
+                  onClick={handleStartGame}
+                  className="flex-[2] h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center gap-3 font-black italic hover:scale-[1.02] transition-all shadow-[0_0_30px_rgba(168,85,247,0.3)] uppercase tracking-wider"
+                >
                   <Play className="w-6 h-6 fill-current" />
                   Start Game
                 </button>
