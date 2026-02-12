@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Send, LogOut, Info, HelpCircle, Timer } from "lucide-react";
+import { User, Send, LogOut, Info, HelpCircle, Timer, Ghost } from "lucide-react";
 
 interface Player {
   id: number;
@@ -31,6 +31,16 @@ const LiarGameRoom = () => {
       {/* 상단 정보 바 */}
       <div className="w-full max-w-6xl flex justify-between items-center mb-6 px-4">
         <div className="flex items-center gap-6">
+          {/* 게임 타입 뱃지 추가 */}
+          <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-2xl">
+            <Ghost className="w-4 h-4 text-blue-500" />
+            <span className="text-sm font-black italic uppercase tracking-wider text-blue-500">
+              Liar Game
+            </span>
+          </div>
+
+          <div className="h-6 w-[1px] bg-white/10" />
+
           <div className="flex items-center gap-2">
             <Timer className="w-5 h-5 text-pink-500" />
             <span className="text-2xl font-black italic tracking-tighter">
