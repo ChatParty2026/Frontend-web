@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Crown, Send, LogOut, Settings, Play } from "lucide-react";
 
 interface Player {
@@ -10,6 +11,7 @@ interface Player {
 }
 
 const GameWaitingRoom = () => {
+  const navigate = useNavigate();
   const [message, setMessage] = useState("");
   // 와이어프레임의 3/8 인원 표시 반영
   const [players, setPlayers] = useState<Player[]>([
@@ -19,6 +21,12 @@ const GameWaitingRoom = () => {
   ]);
 
   const maxPlayers = 8;
+
+  const handleExit = () => {
+    if (window.confirm("정말 방에서 나가시겠습니까?")) {
+      navigate("/rooms");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-6 flex items-center justify-center">
@@ -33,7 +41,10 @@ const GameWaitingRoom = () => {
               {players.length} / {maxPlayers} PLAYERS
             </div>
           </div>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl font-bold hover:bg-red-500 hover:text-white transition-all">
+          <button
+            onClick={handleExit}
+            className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl font-bold hover:bg-red-500 hover:text-white transition-all cursor-pointer"
+          >
             <LogOut className="w-4 h-4" />
             나가기
           </button>
