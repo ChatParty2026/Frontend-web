@@ -8,19 +8,30 @@ export interface CreatePostRequest {
   content: string;
 }
 
+
 export interface PostResponse {
-  postId: number;
-  userId: number;
+  id: string;           // postId 대신 id
+  author: string;       // userId/nickname 대신 author
+  authorAvatar: string;
   type: PostType;
-  title: string;
+  title: string | null;
   content: string;
-  createdDate: string; // "2026-02-10T..."
+  likes: number;
+  comments: number;
+  timestamp: string;    // createdDate 대신 timestamp
 }
 
 export const createPost = async (
   data: CreatePostRequest,
 ): Promise<PostResponse> => {
   const response = await axiosInstance.post<PostResponse>("/post", data);
+  return response.data;
+};
+//최신 게시글 가져오기
+export const getLatestPosts = async (type?: PostType, limit: number = 10): Promise<PostResponse[]> => {
+  const response = await axiosInstance.get<PostResponse[]>("/post/latest", {
+    params: { type, limit }
+  });
   return response.data;
 };
 
