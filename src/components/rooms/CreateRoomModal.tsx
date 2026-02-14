@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { X, Lock, Unlock, Users } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -16,7 +15,6 @@ const CreateRoomModal = ({
   socket,
   currentUser,
 }: CreateRoomModalProps) => {
-  const navigate = useNavigate();
   const [roomTitle, setRoomTitle] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [password, setPassword] = useState("");

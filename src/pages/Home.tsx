@@ -1,7 +1,6 @@
 import { Gamepad2 } from "lucide-react";
 import Header from "../components/Header";
 import Board from "../components/board/Board";
-import LiveChat from "../components/LiveChat";
 import UserProfileCard from "../components/UserProfileCard";
 import { useAuthInit } from "../hooks/useAuthInit";
 
@@ -48,9 +47,7 @@ const Home = () => {
   };
 
   return (
-    // 배경: 밤처럼 아주 어두운 다크 그레이/블랙
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden relative">
-      {/* 전역 네온 글로우 효과 (모달과 동일한 무드) */}
       <div className="absolute w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] -top-24 -left-24 animate-pulse"></div>
       <div
         className="absolute w-[500px] h-[500px] bg-pink-600/10 rounded-full blur-[120px] top-1/2 -right-24 animate-pulse"
@@ -127,36 +124,26 @@ const Home = () => {
             </div>
           </section>
 
-          {/* 3. 상단 레이아웃: 채팅과 프로필의 높이를 동일하게 (items-stretch) */}
-          <div className="grid lg:grid-cols-12 gap-8 mb-20 items-stretch">
-            <div className="lg:col-span-8">
-              {/* h-full을 주어 부모 그리드의 높이를 꽉 채우게 합니다 */}
-              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-[600px]">
-                <LiveChat user={user} />
-              </div>
-            </div>
-
+          {/* 상단 레이아웃: 프로필과 게시판 일부를 배치하거나 레이아웃 재구성 */}
+          <div className="grid lg:grid-cols-12 gap-8 mb-20 items-start">
             <div className="lg:col-span-4">
-              {/* 프로필 카드가 담긴 컨테이너 */}
-              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-[600px]">
+              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-[500px]">
                 <UserProfileCard key={user?.nickname} user={user} />
               </div>
             </div>
+
+            <div className="lg:col-span-8">
+              <div className="flex items-center gap-3 mb-6">
+                <h2 className="text-3xl font-black italic tracking-tight text-white">
+                  COMMUNITY 💬
+                </h2>
+                <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
+              </div>
+              <div className="bg-white/5 rounded-[2.5rem] border border-white/10 p-2 backdrop-blur-sm h-[500px] overflow-hidden">
+                <Board user={user} />
+              </div>
+            </div>
           </div>
-
-          {/* 4. 하단 레이아웃: 게시판이 전체 너비 차지 */}
-          <section className="w-full">
-            <div className="flex items-center gap-3 mb-8">
-              <h2 className="text-3xl font-black italic tracking-tight">
-                COMMUNITY 💬
-              </h2>
-              <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
-            </div>
-
-            <div className="bg-white/5 rounded-[2.5rem] border border-white/10 p-2 backdrop-blur-sm">
-              <Board user={user} />
-            </div>
-          </section>
         </div>
       </main>
     </div>

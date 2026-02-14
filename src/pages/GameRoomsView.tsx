@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
 import { Plus, Search, Users, Lock, PlayCircle, Filter } from "lucide-react";
 import CreateRoomModal from "../components/rooms/CreateRoomModal";
+import LiveChat from "../components/LiveChat";
 import { useNavigate } from "react-router-dom";
+import { useAuthInit } from "../hooks/useAuthInit";
 
 // 탭 타입 정의
 type GameTypeFilter = "전체" | "마피아" | "라이어";
@@ -62,10 +64,12 @@ const MOCK_ROOMS: Room[] = [
 
 const GameRoomsView = () => {
   const navigate = useNavigate();
+  const { user } = useAuthInit();
   const [statusTab, setStatusTab] = useState("전체");
   const [gameTypeTab, setGameTypeTab] = useState<GameTypeFilter>("전체");
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(true);
 
   // 필터링 로직
   const filteredRooms = useMemo(() => {
@@ -90,148 +94,188 @@ const GameRoomsView = () => {
   }, [statusTab, gameTypeTab, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-8">
-      <div className="container mx-auto max-w-6xl">
-        {/* 상단 헤더 및 필터 영역 */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
-          <div className="space-y-4 w-full md:w-auto">
-            <h1 className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 uppercase">
-              Game Lobby
-            </h1>
+    <div className="min-h-screen bg-[#0a0a0a] text-white p-8 relative overflow-hidden">
+      <div className="container mx-auto max-w-[1600px] transition-all duration-300">
+        <div className="grid lg:grid-cols-12 gap-8">
+          {/* 3. 왼쪽 메인 영역: 채팅창 상태에 따라 너비 확장 */}
+          <div
+            className={`transition-all duration-300 ${
+              isChatOpen
+                ? "lg:col-span-8 xl:col-span-9"
+                : "lg:col-span-12 xl:col-span-12"
+            }`}
+          >
+            <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
+              <div className="space-y-4 w-full md:w-auto">
+                <h1 className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 uppercase">
+                  Game Lobby
+                </h1>
 
-            {/* 탭 메뉴 */}
-            <div className="flex flex-col gap-4">
-              {/* 기존 상태 필터 */}
-              <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10 w-fit">
-                {["전체", "대기중", "플레이중"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setStatusTab(tab)}
-                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
-                      statusTab === tab
-                        ? "bg-white/10 text-white shadow-lg"
-                        : "text-gray-500 hover:text-white"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
+                {/* 탭 메뉴 */}
+                <div className="flex flex-col gap-4">
+                  {/* 기존 상태 필터 */}
+                  <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10 w-fit">
+                    {["전체", "대기중", "플레이중"].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setStatusTab(tab)}
+                        className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
+                          statusTab === tab
+                            ? "bg-white/10 text-white shadow-lg"
+                            : "text-gray-500 hover:text-white"
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 신규: 게임 타입 필터 (마피아/라이어) */}
+                  <div className="flex items-center gap-3">
+                    <Filter className="w-4 h-4 text-purple-500" />
+                    <div className="flex gap-2">
+                      {(["전체", "마피아", "라이어"] as const).map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => setGameTypeTab(type)}
+                          className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${
+                            gameTypeTab === type
+                              ? "bg-purple-600 border-purple-500 text-white"
+                              : "bg-transparent border-white/10 text-gray-500 hover:border-white/20"
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* 신규: 게임 타입 필터 (마피아/라이어) */}
-              <div className="flex items-center gap-3">
-                <Filter className="w-4 h-4 text-purple-500" />
-                <div className="flex gap-2">
-                  {(["전체", "마피아", "라이어"] as const).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setGameTypeTab(type)}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${
-                        gameTypeTab === type
-                          ? "bg-purple-600 border-purple-500 text-white"
-                          : "bg-transparent border-white/10 text-gray-500 hover:border-white/20"
+              <div className="flex gap-4 w-full md:w-auto">
+                {/* 검색바 */}
+                <div className="relative flex-1 md:w-64">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="방 제목 검색..."
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all outline-none"
+                  />
+                </div>
+
+                {/* 방 만들기 버튼 */}
+                <button
+                  onClick={() => setIsCreateRoomModalOpen(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-2xl font-bold hover:bg-purple-500 hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>방 만들기</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 방 목록 그리드 (열 개수 조정 가능) */}
+            <div
+              className={`grid gap-6 transition-all duration-300 ${
+                isChatOpen
+                  ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+                  : "grid-cols-1 md:grid-cols-3 xl:grid-cols-4"
+              }`}
+            >
+              {filteredRooms.map((room) => (
+                <div
+                  key={room.id}
+                  onClick={() => navigate(`/waiting/${room.id}`)}
+                  className="group relative bg-[#121212] border border-white/5 rounded-[2rem] p-6 hover:border-purple-500/30 transition-all cursor-pointer overflow-hidden shadow-2xl"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <span
+                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                        room.status === "WAITING"
+                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                          : "bg-orange-500/10 border-orange-500/20 text-orange-500"
                       }`}
                     >
-                      {type}
-                    </button>
-                  ))}
+                      {room.status}
+                    </span>
+                    {room.isPrivate && (
+                      <Lock className="w-4 h-4 text-gray-600" />
+                    )}
+                  </div>
+
+                  <h3 className="text-xl font-bold mb-2 group-hover:text-purple-400 transition-colors line-clamp-1">
+                    {room.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-6 font-medium">
+                    방장: {room.host}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Users className="w-4 h-4" />
+                      <span className="text-sm font-bold">
+                        {room.playerCount} / {room.maxPlayers}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs font-black uppercase italic px-2 py-0.5 rounded ${
+                          room.gameType === "마피아"
+                            ? "text-red-500"
+                            : "text-blue-500"
+                        }`}
+                      >
+                        {room.gameType}
+                      </span>
+                      <PlayCircle className="w-6 h-6 text-purple-500 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
+                    </div>
+                  </div>
+
+                  {/* 네온 효과 */}
+                  <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-600/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-all"></div>
                 </div>
-              </div>
+              ))}
             </div>
+
+            {filteredRooms.length === 0 && (
+              <div className="text-center py-24">
+                <p className="text-gray-600 font-bold italic text-xl uppercase tracking-widest">
+                  No Rooms Found
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-4 w-full md:w-auto">
-            {/* 검색바 */}
-            <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="방 제목 검색..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all outline-none"
+          {/* 4. 오른쪽 채팅 영역 */}
+<div
+            className={`fixed top-8 bottom-8 transition-all duration-500 ease-in-out z-40 ${
+              isChatOpen
+                ? "right-0 w-[30%] xl:w-[25%]" 
+                : "right-[-30%] xl:right-[-25%] w-[30%] xl:w-[25%]" // 본체 너비만큼 오른쪽으로 밀기
+            }`}
+          >
+            {/* 포인트: 
+               - 전체를 translate-x-full로 날리는 대신 right 값을 조절하거나 
+               - translate-x를 쓰되 버튼 크기(40px)만큼은 남겨둡니다.
+            */}
+            <div className="h-full rounded-l-[2.5rem] border border-white/10 bg-[#121212] shadow-2xl overflow-visible">
+              <LiveChat
+                user={user}
+                isOpen={isChatOpen}
+                onToggle={() => setIsChatOpen(!isChatOpen)}
               />
             </div>
-
-            {/* 방 만들기 버튼 */}
-            <button
-              onClick={() => setIsCreateRoomModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-2xl font-bold hover:bg-purple-500 hover:text-white transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] shrink-0 cursor-pointer"
-            >
-              <Plus className="w-5 h-5" />
-              <span>방 만들기</span>
-            </button>
           </div>
         </div>
-
-        {/* 방 목록 그리드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRooms.map((room) => (
-            <div
-              key={room.id}
-              onClick={() => navigate(`/waiting/${room.id}`)}
-              className="group relative bg-[#121212] border border-white/5 rounded-[2rem] p-6 hover:border-purple-500/30 transition-all cursor-pointer overflow-hidden shadow-2xl"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span
-                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                    room.status === "WAITING"
-                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
-                      : "bg-orange-500/10 border-orange-500/20 text-orange-500"
-                  }`}
-                >
-                  {room.status}
-                </span>
-                {room.isPrivate && <Lock className="w-4 h-4 text-gray-600" />}
-              </div>
-
-              <h3 className="text-xl font-bold mb-2 group-hover:text-purple-400 transition-colors line-clamp-1">
-                {room.title}
-              </h3>
-              <p className="text-sm text-gray-500 mb-6 font-medium">
-                방장: {room.host}
-              </p>
-
-              <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                <div className="flex items-center gap-2 text-gray-400">
-                  <Users className="w-4 h-4" />
-                  <span className="text-sm font-bold">
-                    {room.playerCount} / {room.maxPlayers}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-xs font-black uppercase italic px-2 py-0.5 rounded ${
-                      room.gameType === "마피아"
-                        ? "text-red-500"
-                        : "text-blue-500"
-                    }`}
-                  >
-                    {room.gameType}
-                  </span>
-                  <PlayCircle className="w-6 h-6 text-purple-500 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
-                </div>
-              </div>
-
-              {/* 네온 효과 */}
-              <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-600/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-all"></div>
-            </div>
-          ))}
-        </div>
-
-        {/* 결과가 없을 때 */}
-        {filteredRooms.length === 0 && (
-          <div className="text-center py-24">
-            <p className="text-gray-600 font-bold italic text-xl uppercase tracking-widest">
-              No Rooms Found
-            </p>
-          </div>
-        )}
       </div>
 
       <CreateRoomModal
         isOpen={isCreateRoomModalOpen}
         onClose={() => setIsCreateRoomModalOpen(false)}
+        currentUser={user?.nickname ?? "익명"}
+        socket={null}
       />
     </div>
   );
