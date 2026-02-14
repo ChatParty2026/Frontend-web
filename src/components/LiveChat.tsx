@@ -1,7 +1,7 @@
 import { Send, MessageCircle, UserCircle } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { AuthUser } from "../types/auth";
-import axios from "axios";
+import { useSocket } from "../context/SocketContext";
 
 interface ChatMessage {
   id: string;
@@ -28,15 +28,14 @@ interface LiveChatProps {
 }
 
 const LiveChat = ({ user }: LiveChatProps) => {
+  const { socket, sendMessage, isConnected } = useSocket();
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
   const [newMessage, setNewMessage] = useState("");
   const [onlineCount, setOnlineCount] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const socketRef = useRef<WebSocket | null>(null);
   const isMyMessageRef = useRef(false);
-
   const currentNickname = user?.nickname;
 
   // 스크롤 위치 계산 함수
@@ -67,26 +66,14 @@ const LiveChat = ({ user }: LiveChatProps) => {
   }, [messages, isAtBottom, scrollToBottom]);
 
   // -----------------------------
-  // WebSocket 연결 함수
+  // 메시지 수신 처리 (이벤트 리스너)
   // -----------------------------
-  const connect = (token: string, nickname: string) => {
-    const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}?token=${token}`);
-    socketRef.current = ws;
+  useEffect(() => {
+    if (!socket) return;
 
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          type: "JOIN",
-          gameType: "MAIN",
-          roomId: "main",
-          sender: nickname,
-        }),
-      );
-      console.log("✅ WebSocket connected:", nickname);
-    };
-
-    ws.onmessage = (event) => {
+    const handleMessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data);
+
       switch (data.type) {
         case "CHAT":
           setMessages((prev) => [
@@ -109,84 +96,30 @@ const LiveChat = ({ user }: LiveChatProps) => {
       }
     };
 
-    ws.onclose = async (event) => {
-      console.log("🔌 WebSocket closed:", event.code);
-
-      // 토큰 만료 시 (서버에서 4001 코드 보낸다고 가정)
-      if (event.code === 4001) {
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (!refreshToken) return;
-
-        try {
-          const { data } = await axios.post(
-            `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
-            {},
-            { headers: { Authorization: `Bearer ${refreshToken}` } },
-          );
-
-          localStorage.setItem("accessToken", data.accessToken);
-          localStorage.setItem("refreshToken", data.refreshToken);
-
-          // 재귀 호출로 재연결
-          connect(data.accessToken, nickname);
-        } catch {
-          localStorage.clear();
-          window.location.href = "/";
-        }
-      }
-    };
-
-    ws.onerror = (err) => console.log("⚠️ WebSocket error:", err);
-  };
-
-  // -----------------------------
-  // useEffect: 닉네임 확인 + connect 호출
-  // -----------------------------
-  useEffect(() => {
-    if (!currentNickname) return;
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
-
-    connect(token, currentNickname);
+    socket.addEventListener("message", handleMessage);
 
     return () => {
-      console.log("🧹 Cleaning up WebSocket");
-      socketRef.current?.close();
-      socketRef.current = null;
+      socket.removeEventListener("message", handleMessage);
     };
-  }, [currentNickname]);
+  }, [socket]);
 
   // -----------------------------
   // 메시지 전송
   // -----------------------------
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !newMessage.trim() ||
-      !socketRef.current ||
-      socketRef.current.readyState !== WebSocket.OPEN ||
-      !currentNickname
-    )
-      return;
+    if (!newMessage.trim() || !isConnected || !currentNickname) return;
 
-    // 플래그를 true로 설정하여 useEffect가 스크롤을 내리도록 유도
     isMyMessageRef.current = true;
 
-    socketRef.current.send(
-      JSON.stringify({
-        type: "CHAT",
-        gameType: "MAIN",
-        roomId: "main",
-        sender: currentNickname,
-        message: newMessage,
-      }),
-    );
-
-    // 참고: 서버에서 CHAT 타입을 다시 쏴주면 onmessage에서 messages가 업데이트되고,
-    // 그때 위 useEffect가 실행됩니다.
+    sendMessage({
+      type: "CHAT",
+      gameType: "MAIN",
+      roomId: "main",
+      sender: currentNickname,
+      message: newMessage,
+    });
 
     setNewMessage("");
   };
@@ -194,9 +127,6 @@ const LiveChat = ({ user }: LiveChatProps) => {
   if (!user)
     return <div className="p-10 text-center text-gray-500">Connecting...</div>;
 
-  // -----------------------------
-  // JSX 렌더링
-  // -----------------------------
   return (
     <div className="w-full h-full flex flex-col bg-transparent">
       {/* 헤더 섹션 */}
@@ -304,7 +234,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
           />
           <button
             type="submit"
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || !isConnected}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl transition-all disabled:opacity-30 disabled:grayscale cursor-pointer disabled:cursor-default"
           >
             <Send className="w-4 h-4" />

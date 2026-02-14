@@ -4,6 +4,7 @@ import GameRoomsView from "./pages/GameRoomsView";
 import { useAuthInit } from "./hooks/useAuthInit";
 import GameWaitingRoom from "./pages/GameWaitingRoom";
 import LiarGameRoom from "./pages/LiarGameRoom";
+import { SocketProvider } from "./context/SocketContext";
 
 const App = () => {
   const { user, isLoading } = useAuthInit();
@@ -20,22 +21,24 @@ const App = () => {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* 메인 페이지 */}
-        <Route path="/" element={<Home />} />
+    <SocketProvider user={user}>
+      <BrowserRouter>
+        <Routes>
+          {/* 메인 페이지 */}
+          <Route path="/" element={<Home />} />
 
-        {/* 방 목록 페이지 (새 창으로 열릴 곳) */}
-        <Route path="/rooms" element={<GameRoomsView />} />
-        {/* 대기실 */}
-        <Route path="/waiting/:roomId" element={<GameWaitingRoom />} />
+          {/* 방 목록 페이지 (새 창으로 열릴 곳) */}
+          <Route path="/rooms" element={<GameRoomsView />} />
+          {/* 대기실 */}
+          <Route path="/waiting/:roomId" element={<GameWaitingRoom />} />
 
-        <Route path="/game/liar/:roomId" element={<LiarGameRoom />} />
+          <Route path="/game/liar/:roomId" element={<LiarGameRoom />} />
 
-        {/* 정의되지 않은 경로 접근 시 홈으로 리다이렉트 */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* 정의되지 않은 경로 접근 시 홈으로 리다이렉트 */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </SocketProvider>
   );
 };
 
