@@ -1,4 +1,10 @@
-import { Send, MessageCircle, UserCircle } from "lucide-react";
+import {
+  Send,
+  MessageCircle,
+  UserCircle,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { AuthUser } from "../types/auth";
 import { useSocket } from "../context/SocketContext";
@@ -25,9 +31,11 @@ const MOCK_MESSAGES: ChatMessage[] = [
 
 interface LiveChatProps {
   user: AuthUser | null;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-const LiveChat = ({ user }: LiveChatProps) => {
+const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
   const { socket, sendMessage, isConnected } = useSocket();
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
   const [newMessage, setNewMessage] = useState("");
@@ -130,7 +138,19 @@ const LiveChat = ({ user }: LiveChatProps) => {
   return (
     <div className="w-full h-full flex flex-col bg-transparent">
       {/* 헤더 섹션 */}
-      <div className="shrink-0 p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
+      <div className="relative shrink-0 p-6 flex items-center justify-between border-b border-white/5 bg-white/5 rounded-tl-[2.5rem]">
+        {/* 2. 토글 버튼 (왼쪽 상단 플로팅) */}
+        <button
+          onClick={onToggle}
+          className="absolute left-0 top-[37px] -translate-x-full z-50 flex items-center justify-center w-10 h-12 bg-[#121212] border border-white/10 border-r-0 rounded-l-2xl transition-all duration-300 hover:bg-purple-600 group cursor-pointer shadow-[-4px_0_15px_rgba(0,0,0,0.5)]"
+        >
+          {isOpen ? (
+            <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-white ml-1" />
+          ) : (
+            <MessageCircle className="w-4.5 h-4.5 text-gray-400 group-hover:text-white" />
+          )}
+        </button>
+
         <div className="flex items-center gap-3">
           <div className="p-2 bg-pink-500/10 rounded-lg">
             <MessageCircle className="w-5 h-5 text-pink-500" />
@@ -223,7 +243,7 @@ const LiveChat = ({ user }: LiveChatProps) => {
       </div>
 
       {/* 입력 섹션 */}
-      <div className="shrink-0 p-6 bg-white/5 border-t border-white/5">
+      <div className="shrink-0 p-6 bg-white/5 border-t border-white/5 rounded-bl-[2.5rem]">
         <form onSubmit={handleSubmit} className="relative group">
           <input
             type="text"
