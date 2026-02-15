@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useEffect,
@@ -12,6 +12,8 @@ interface SocketContextType {
   socket: WebSocket | null;
   sendMessage: (message: object) => void;
   isConnected: boolean;
+  user: AuthUser | null;
+  getLatestPlayers: (roomId: string) => string[];
 }
 
 const SocketContext = createContext<SocketContextType | null>(null);
@@ -33,6 +35,7 @@ export const SocketProvider = ({
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
+  const lastPlayerList = useRef<{ [roomId: string]: string[] }>({}); // roomId별 저장
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -79,13 +82,15 @@ export const SocketProvider = ({
       // 2. 플레이어 리스트 업데이트 이벤트 (신규 추가)
       // 생성, 입장, 유저 변경 시 모두 이 이벤트를 통해 데이터를 전달합니다.
       if (data.type === "PLAYER_LIST_UPDATE") {
-        console.log("👥 Player List Updated:", data.payload.players);
+        const rid = data.roomId || data.roomld;
+        const players = data.payload.players;
+
+        // 1. Ref에 최신 데이터 저장 (컴포넌트가 아직 없어도 데이터는 보존됨)
+        lastPlayerList.current[rid] = players;
+
+        // 2. 기존 커스텀 이벤트 발생
         const playerUpdateEvent = new CustomEvent("PLAYER_LIST_UPDATE", {
-          detail: {
-            players: data.payload.players,
-            roomId: data.roomId || data.roomld, // 서버 오타 대비
-            gameType: data.gameType,
-          },
+          detail: { players, roomId: rid, gameType: data.gameType },
         });
         window.dispatchEvent(playerUpdateEvent);
       }
@@ -134,8 +139,15 @@ export const SocketProvider = ({
     }
   };
 
+  // 최신 데이터를 안전하게 꺼내올 함수
+  const getLatestPlayers = (roomId: string) => {
+    return lastPlayerList.current[roomId] || [];
+  };
+
   return (
-    <SocketContext.Provider value={{ socket, sendMessage, isConnected }}>
+    <SocketContext.Provider
+      value={{ socket, sendMessage, isConnected, user, getLatestPlayers }}
+    >
       {children}
     </SocketContext.Provider>
   );
