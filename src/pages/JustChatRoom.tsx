@@ -12,12 +12,6 @@ interface ChatMessage {
   isSystem?: boolean;
 }
 
-interface PlayerListUpdateDetail {
-  players: string[];
-  roomId: string;
-  gameType: string;
-}
-
 const JustChatRoom = () => {
   const { roomId } = useParams();
   const { getLatestPlayers, sendMessage, socket, isConnected, user } =
@@ -33,6 +27,18 @@ const JustChatRoom = () => {
 
   // 스크롤 제어를 위한 Ref
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleExit = () => {
+    if (isConnected && user && roomId) {
+      sendMessage({
+        type: "LEAVE",
+        roomId: roomId,
+        sender: user.nickname,
+        gameType: "JUST_CHAT",
+      });
+    }
+    navigate("/rooms");
+  };
 
   // -----------------------------
   // 스크롤 하단 이동 로직
@@ -121,7 +127,7 @@ const JustChatRoom = () => {
           </div>
         </div>
         <button
-          onClick={() => navigate("/rooms")}
+          onClick={handleExit}
           className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all font-bold text-sm"
         >
           <LogOut className="w-4 h-4" /> EXIT

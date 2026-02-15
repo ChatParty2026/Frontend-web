@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { User, Send, LogOut, Info, HelpCircle, Timer, Ghost } from "lucide-react";
+import {
+  User,
+  Send,
+  LogOut,
+  Info,
+  HelpCircle,
+  Timer,
+  Ghost,
+} from "lucide-react";
+import { useSocket } from "../context/SocketContext";
 
 interface Player {
   id: number;
@@ -12,6 +21,9 @@ interface Player {
 const LiarGameRoom = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
+
+  const { sendMessage, isConnected, user } = useSocket();
+
   const [message, setMessage] = useState("");
   const [gameState, setGameState] = useState<"DISCUSS" | "VOTE" | "RESULT">(
     "DISCUSS",
@@ -26,6 +38,18 @@ const LiarGameRoom = () => {
 
   const category = "음식";
   const keyword = "치킨"; // 라이어는 이 키워드를 모름
+
+  const handleExit = () => {
+    if (isConnected && user && roomId) {
+      sendMessage({
+        type: "LEAVE",
+        roomId: roomId,
+        sender: user.nickname,
+        gameType: 'LIAR',
+      });
+    }
+    navigate("/rooms");
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-4 md:p-6 flex flex-col items-center">
@@ -58,7 +82,7 @@ const LiarGameRoom = () => {
         </div>
 
         <button
-          onClick={() => navigate("/rooms")}
+          onClick={handleExit}
           className="p-3 bg-white/5 hover:bg-red-500/20 rounded-2xl transition-all group"
         >
           <LogOut className="w-5 h-5 text-gray-500 group-hover:text-red-500" />

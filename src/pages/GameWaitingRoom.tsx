@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { User, Crown, Send, LogOut, Settings, Play } from "lucide-react";
+import { useSocket } from "../context/SocketContext";
 
 interface Player {
   id: number;
@@ -16,10 +17,9 @@ const GameWaitingRoom = () => {
   const [message, setMessage] = useState("");
   const [players, setPlayers] = useState<Player[]>([]);
   const [maxCount, setMaxCount] = useState(8);
-  const isHost = players.find(
-    (p) => p.nickname === currentUserNickname,
-  )?.isHost;
+  const isHost = players.find((p) => p.nickname === user?.nickname)?.isHost;
   const [gameType, setGameType] = useState<string>("LIAR");
+  const { sendMessage, isConnected, user } = useSocket();
 
   useEffect(() => {
     const handleUpdate = (e: any) => {
@@ -41,6 +41,15 @@ const GameWaitingRoom = () => {
 
   const handleExit = () => {
     if (window.confirm("정말 방에서 나가시겠습니까?")) {
+      if (isConnected && user && roomId) {
+        // 서버에 LEAVE 요청 전송
+        sendMessage({
+          type: "LEAVE",
+          roomId: roomId,
+          sender: user.nickname,
+          gameType: gameType
+        });
+      }
       navigate("/rooms");
     }
   };
