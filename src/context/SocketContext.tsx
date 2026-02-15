@@ -75,6 +75,24 @@ export const SocketProvider = ({
         const event = new CustomEvent("ROOM_CREATED", { detail: data });
         window.dispatchEvent(event);
       }
+
+      // 2. 플레이어 리스트 업데이트 이벤트 (신규 추가)
+      // 생성, 입장, 유저 변경 시 모두 이 이벤트를 통해 데이터를 전달합니다.
+      if (data.type === "PLAYER_LIST_UPDATE") {
+        console.log("👥 Player List Updated:", data.payload.players);
+        const playerUpdateEvent = new CustomEvent("PLAYER_LIST_UPDATE", {
+          detail: {
+            players: data.payload.players,
+            roomId: data.roomId || data.roomld, // 서버 오타 대비
+            gameType: data.gameType,
+          },
+        });
+        window.dispatchEvent(playerUpdateEvent);
+      }
+
+      if (data.type === "ERROR") {
+        alert(data.message);
+      }
     };
 
     ws.onclose = (e) => {
