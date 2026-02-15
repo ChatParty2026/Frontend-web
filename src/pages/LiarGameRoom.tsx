@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { User, Send, LogOut, Info, HelpCircle, Timer, Ghost } from "lucide-react";
 
 interface Player {
@@ -10,6 +10,7 @@ interface Player {
 }
 
 const LiarGameRoom = () => {
+  const { roomId } = useParams();
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [gameState, setGameState] = useState<"DISCUSS" | "VOTE" | "RESULT">(
