@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Clock, Trash2, ThumbsUp, MessageSquare } from "lucide-react";
 import type { Post } from "./Board"; // Board에서 Post 인터페이스 export 필요
 import type { AuthUser } from "../../types/auth";
+import { formatRelativeTime } from "../../utils/dateUtils";
 
 const MAX_DISPLAY_LENGTH = 350;
 
@@ -49,7 +50,7 @@ const PostItem = ({
               </span>
               <span className="text-[10px] text-gray-600 font-black uppercase tracking-widest flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {post.timestamp}
+                {formatRelativeTime(post.timestamp)}
               </span>
             </div>
 
