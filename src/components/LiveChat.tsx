@@ -77,13 +77,16 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
   // 메시지 수신 처리 (이벤트 리스너)
   // -----------------------------
   useEffect(() => {
-    if (!socket) return;
+  if (!socket) return;
 
-    const handleMessage = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
+  const handleMessage = (event: MessageEvent) => {
+    const data = JSON.parse(event.data);
 
-      switch (data.type) {
-        case "CHAT":
+    switch (data.type) {
+      case "CHAT":
+        // 🔥 핵심 수정: roomId가 "main"인 메시지(로비 채팅)만 수용합니다.
+        // 만약 게임방 내부라면 각 방의 roomId와 비교하도록 로직을 짜야 합니다.
+        if (data.roomId === "main") {
           setMessages((prev) => [
             ...prev,
             {
@@ -95,21 +98,20 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
               isSystem: data.sender === "SYSTEM" || data.sender === "시스템",
             },
           ]);
-          break;
-        case "ROOM_LIST_UPDATE":
-          if (data.payload?.lobbyCount !== undefined) {
-            setOnlineCount(data.payload.lobbyCount);
-          }
-          break;
-      }
-    };
+        }
+        break;
+      
+      case "ROOM_LIST_UPDATE":
+        if (data.payload?.lobbyCount !== undefined) {
+          setOnlineCount(data.payload.lobbyCount);
+        }
+        break;
+    }
+  };
 
-    socket.addEventListener("message", handleMessage);
-
-    return () => {
-      socket.removeEventListener("message", handleMessage);
-    };
-  }, [socket]);
+  socket.addEventListener("message", handleMessage);
+  return () => socket.removeEventListener("message", handleMessage);
+}, [socket]);
 
   // -----------------------------
   // 메시지 전송

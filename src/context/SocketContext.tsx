@@ -55,20 +55,13 @@ export const SocketProvider = ({
     // 생성 즉시 Ref에 저장 (가장 중요)
     socketRef.current = ws;
 
+
     ws.onopen = () => {
       console.log("✅ WebSocket Open State");
-      setIsConnected(true);
+      setIsConnected(true); // 이제 GameRoomsView가 이걸 보고 움직입니다.
       setSocket(ws);
-
-      ws.send(
-        JSON.stringify({
-          type: "JOIN",
-          gameType: "MAIN",
-          roomId: "main",
-          sender: user.nickname,
-        }),
-      );
     };
+
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
