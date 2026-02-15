@@ -6,6 +6,7 @@ import GameWaitingRoom from "./pages/GameWaitingRoom";
 import LiarGameRoom from "./pages/LiarGameRoom";
 import { SocketProvider } from "./context/SocketContext";
 import JustChatRoom from "./pages/JustChatRoom";
+import GameLayout from "./layouts/GameLayout";
 
 const App = () => {
   const { user, isLoading } = useAuthInit();
@@ -28,13 +29,15 @@ const App = () => {
           {/* 메인 페이지 */}
           <Route path="/" element={<Home />} />
 
-          {/* 방 목록 페이지 (새 창으로 열릴 곳) */}
-          <Route path="/rooms" element={<GameRoomsView />} />
-          {/* 대기실 */}
-          <Route path="/waiting/:roomId" element={<GameWaitingRoom />} />
+          <Route element={<GameLayout />}>
+            {/* 방 목록 페이지 (새 창으로 열릴 곳) */}
+            <Route path="/rooms" element={<GameRoomsView />} />
+            {/* 대기실 */}
+            <Route path="/waiting/:roomId" element={<GameWaitingRoom />} />
 
-          <Route path="/game/liar/:roomId" element={<LiarGameRoom />} />
-          <Route path="/chat/:roomId" element={<JustChatRoom />} />
+            <Route path="/game/liar/:roomId" element={<LiarGameRoom />} />
+            <Route path="/chat/:roomId" element={<JustChatRoom />} />
+          </Route>
 
           {/* 정의되지 않은 경로 접근 시 홈으로 리다이렉트 */}
           <Route path="*" element={<Navigate to="/" replace />} />

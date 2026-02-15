@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Plus, Search, Users, Lock, PlayCircle, Filter } from "lucide-react";
 import CreateRoomModal from "../components/rooms/CreateRoomModal";
-import LiveChat from "../components/LiveChat";
 import { useNavigate } from "react-router-dom";
 import { useAuthInit } from "../hooks/useAuthInit";
 
@@ -69,7 +68,6 @@ const GameRoomsView = () => {
   const [gameTypeTab, setGameTypeTab] = useState<GameTypeFilter>("전체");
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(true);
 
   // 필터링 로직
   const filteredRooms = useMemo(() => {
@@ -98,13 +96,7 @@ const GameRoomsView = () => {
       <div className="container mx-auto max-w-[1600px] transition-all duration-300">
         <div className="grid lg:grid-cols-12 gap-8">
           {/* 3. 왼쪽 메인 영역: 채팅창 상태에 따라 너비 확장 */}
-          <div
-            className={`transition-all duration-300 ${
-              isChatOpen
-                ? "lg:col-span-8 xl:col-span-9"
-                : "lg:col-span-12 xl:col-span-12"
-            }`}
-          >
+          <div className="transition-all duration-300 lg:col-span-12 xl:col-span-12">
             <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
               <div className="space-y-4 w-full md:w-auto">
                 <h1 className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 uppercase">
@@ -177,13 +169,7 @@ const GameRoomsView = () => {
             </div>
 
             {/* 방 목록 그리드 (열 개수 조정 가능) */}
-            <div
-              className={`grid gap-6 transition-all duration-300 ${
-                isChatOpen
-                  ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-                  : "grid-cols-1 md:grid-cols-3 xl:grid-cols-4"
-              }`}
-            >
+            <div className="grid gap-6 transition-all duration-300 grid-cols-1 md:grid-cols-3 xl:grid-cols-4">
               {filteredRooms.map((room) => (
                 <div
                   key={room.id}
@@ -246,27 +232,6 @@ const GameRoomsView = () => {
                 </p>
               </div>
             )}
-          </div>
-
-          {/* 4. 오른쪽 채팅 영역 */}
-<div
-            className={`fixed top-8 bottom-8 transition-all duration-500 ease-in-out z-40 ${
-              isChatOpen
-                ? "right-0 w-[30%] xl:w-[25%]" 
-                : "right-[-30%] xl:right-[-25%] w-[30%] xl:w-[25%]" // 본체 너비만큼 오른쪽으로 밀기
-            }`}
-          >
-            {/* 포인트: 
-               - 전체를 translate-x-full로 날리는 대신 right 값을 조절하거나 
-               - translate-x를 쓰되 버튼 크기(40px)만큼은 남겨둡니다.
-            */}
-            <div className="h-full rounded-l-[2.5rem] border border-white/10 bg-[#121212] shadow-2xl overflow-visible">
-              <LiveChat
-                user={user}
-                isOpen={isChatOpen}
-                onToggle={() => setIsChatOpen(!isChatOpen)}
-              />
-            </div>
           </div>
         </div>
       </div>
