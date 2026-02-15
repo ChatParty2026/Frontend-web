@@ -48,7 +48,7 @@ const LoginModal = ({
 
         {/* 소셜 버튼 그룹 */}
         <div className="flex flex-col gap-4">
-          <button className="flex items-center justify-center gap-3 w-full bg-[#FEE500] text-[#191919] hover:bg-[#FADA00] rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95">
+          <button className="flex items-center justify-center gap-3 w-full bg-[#FEE500] text-[#191919] hover:bg-[#FADA00] rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95 cursor-pointer">
             <img src={kakaoLogo} className="w-6 h-6" alt="Kakao" />
             카카오로 입장하기
           </button>
@@ -56,7 +56,7 @@ const LoginModal = ({
           {/* 구글 로그인 버튼: 핸들러 연결 */}
           <button
             onClick={handleGoogleLogin}
-            className="flex items-center justify-center gap-3 w-full bg-white text-gray-900 hover:bg-gray-100 rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+            className="flex items-center justify-center gap-3 w-full bg-white text-gray-900 hover:bg-gray-100 rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
           >
             <img
               src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
@@ -66,7 +66,7 @@ const LoginModal = ({
             구글로 입장하기
           </button>
 
-          <button className="flex items-center justify-center gap-3 w-full bg-[#03C75A] text-white hover:bg-[#02b351] rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95">
+          <button className="flex items-center justify-center gap-3 w-full bg-[#03C75A] text-white hover:bg-[#02b351] rounded-2xl h-14 font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95 cursor-pointer">
             <span className="text-xl font-black italic">N</span>
             네이버로 입장하기
           </button>
