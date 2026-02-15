@@ -27,7 +27,7 @@ type GameTypeFilter = "전체" | "MAFIA" | "LIAR" | "JUST_CHAT";
 
 const GameRoomsView = () => {
   const navigate = useNavigate();
-  const { socket, user } = useSocket();
+  const { socket, user, isConnected, sendMessage } = useSocket();
 
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,6 +81,17 @@ const GameRoomsView = () => {
   }, [rooms, statusTab, gameTypeTab, searchQuery]);
 
   const handleJoinRoom = (room: Room) => {
+    if (!user || !isConnected) return;
+
+    // 1. 서버에 JOIN 메시지 전송
+    sendMessage({
+      type: "JOIN",
+      gameType: room.gameType,
+      roomId: room.roomId,
+      sender: user.nickname,
+    });
+
+    // 2. 페이지 이동
     if (room.gameType === "JUST_CHAT") {
       navigate(`/chat/${room.roomId}`);
     } else {
