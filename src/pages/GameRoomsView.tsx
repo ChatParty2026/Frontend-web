@@ -1,5 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Search, Users, Lock, PlayCircle, Filter } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Users,
+  Lock,
+  PlayCircle,
+  Filter,
+  Crown,
+} from "lucide-react";
 import CreateRoomModal from "../components/rooms/CreateRoomModal";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "../context/SocketContext";
@@ -12,9 +20,9 @@ interface Room {
   maxCount: number;
   hasPassword: boolean;
   status: "대기 중" | "게임 중";
+  hostName: string; // 추가된 방장 이름 필드
 }
 
-// 필터 타입은 서버 값(영문)을 유지하되 UI만 한글로 처리
 type GameTypeFilter = "전체" | "MAFIA" | "LIAR" | "JUST_CHAT";
 
 const GameRoomsView = () => {
@@ -28,7 +36,6 @@ const GameRoomsView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
 
-  // 게임 타입 표시용 매핑 객체
   const GAME_TYPE_LABEL: Record<GameTypeFilter, string> = {
     전체: "전체",
     MAFIA: "마피아",
@@ -123,7 +130,6 @@ const GameRoomsView = () => {
                                 : "bg-transparent border-white/10 text-gray-500 hover:border-white/20"
                             }`}
                           >
-                            {/* UI 표시만 한글로 매핑 */}
                             {GAME_TYPE_LABEL[type]}
                           </button>
                         ),
@@ -193,9 +199,18 @@ const GameRoomsView = () => {
                       )}
                     </div>
 
-                    <h3 className="text-xl font-bold mb-2 group-hover:text-purple-400 transition-colors line-clamp-2 min-h-[3.5rem]">
-                      {room.title}
-                    </h3>
+                    <div className="space-y-1 mb-2">
+                      <h3 className="text-xl font-bold group-hover:text-purple-400 transition-colors line-clamp-1">
+                        {room.title}
+                      </h3>
+                      {/* 방장 정보 추가 */}
+                      <div className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-400 transition-colors">
+                        <Crown className="w-3 h-3 text-yellow-500/70" />
+                        <span className="text-[11px] font-medium truncate">
+                          {room.hostName}
+                        </span>
+                      </div>
+                    </div>
 
                     <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
                       <div className="flex items-center gap-2 text-gray-400">
