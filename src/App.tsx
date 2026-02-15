@@ -23,27 +23,28 @@ const App = () => {
   }
 
   return (
-    <SocketProvider user={user}>
-      <BrowserRouter>
-        <Routes>
-          {/* 메인 페이지 */}
-          <Route path="/" element={<Home />} />
+    <BrowserRouter>
+  <Routes>
+    {/* 소켓이 필요 없는 메인 페이지 */}
+    <Route path="/" element={<Home />} />
 
-          <Route element={<GameLayout />}>
-            {/* 방 목록 페이지 (새 창으로 열릴 곳) */}
-            <Route path="/rooms" element={<GameRoomsView />} />
-            {/* 대기실 */}
-            <Route path="/waiting/:roomId" element={<GameWaitingRoom />} />
+    {/* 소켓이 필요한 게임 관련 페이지들 */}
+    <Route
+      element={
+        <SocketProvider user={user}>
+          <GameLayout />
+        </SocketProvider>
+      }
+    >
+      <Route path="/rooms" element={<GameRoomsView />} />
+      <Route path="/waiting/:roomId" element={<GameWaitingRoom />} />
+      <Route path="/game/liar/:roomId" element={<LiarGameRoom />} />
+      <Route path="/chat/:roomId" element={<JustChatRoom />} />
+    </Route>
 
-            <Route path="/game/liar/:roomId" element={<LiarGameRoom />} />
-            <Route path="/chat/:roomId" element={<JustChatRoom />} />
-          </Route>
-
-          {/* 정의되지 않은 경로 접근 시 홈으로 리다이렉트 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </SocketProvider>
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Routes>
+</BrowserRouter>
   );
 };
 
