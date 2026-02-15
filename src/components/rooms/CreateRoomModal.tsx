@@ -14,7 +14,6 @@ import { useNavigate } from "react-router-dom";
 interface CreateRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
-  socket: WebSocket | null;
   currentUser: string;
 }
 
