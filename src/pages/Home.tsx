@@ -126,12 +126,6 @@ const Home = () => {
 
           {/* 상단 레이아웃: 프로필과 게시판 일부를 배치하거나 레이아웃 재구성 */}
           <div className="grid lg:grid-cols-12 gap-8 mb-20 items-start">
-            <div className="lg:col-span-4">
-              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-[500px]">
-                <UserProfileCard key={user?.nickname} user={user} />
-              </div>
-            </div>
-
             <div className="lg:col-span-8">
               <div className="flex items-center gap-3 mb-6">
                 <h2 className="text-3xl font-black italic tracking-tight text-white">
@@ -141,6 +135,11 @@ const Home = () => {
               </div>
               <div className="bg-white/5 rounded-[2.5rem] border border-white/10 p-2 backdrop-blur-sm h-[500px] overflow-hidden">
                 <Board user={user} />
+              </div>
+            </div>
+            <div className="lg:col-span-4">
+              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-[500px]">
+                <UserProfileCard key={user?.nickname} user={user} />
               </div>
             </div>
           </div>
