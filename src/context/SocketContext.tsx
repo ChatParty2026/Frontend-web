@@ -70,15 +70,11 @@ export const SocketProvider = ({
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      // 서버 응답: type이 "GAME_INFO"이고 gameType이 "LIAR"인 경우
-      if (data.type === "GAME_INFO" && data.gameType === "LIAR") {
-        console.log("🎯 방 생성 성공! 라이어 게임방으로 이동합니다.");
-        // SPA 이동을 위해 window.location을 사용하거나,
-        // 전역 상태에 저장 후 전역 Router에서 처리할 수 있습니다.
-        window.location.href = `/game/liar/${data.roomId}`;
+      if (data.status === "SUCCESS" && data.type === "CREATE") {
+        // 커스텀 이벤트 발생 (데이터 전달)
+        const event = new CustomEvent("ROOM_CREATED", { detail: data });
+        window.dispatchEvent(event);
       }
-
-      if (data.type === "ERROR") alert(data.message);
     };
 
     ws.onclose = (e) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Lock,
@@ -9,6 +9,7 @@ import {
   Search,
 } from "lucide-react";
 import { useSocket } from "../../context/SocketContext";
+import { useNavigate } from "react-router-dom";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -30,6 +31,24 @@ const CreateRoomModal = ({
   const [password, setPassword] = useState("");
   const [gameType, setGameType] = useState<GameType>("LIAR");
   const [maxPlayers, setMaxPlayers] = useState(8);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleRoomCreated = (e: any) => {
+      const data = e.detail;
+      console.log("📥 방 생성 응답 수신:", data);
+
+      if (data.gameType === "JUST_CHAT") {
+        navigate(`/chat/${data.roomId}`);
+      } else {
+        navigate(`/game/${data.gameType.toLowerCase()}/${data.roomId}`);
+      }
+      onClose(); // 모달 닫기
+    };
+
+    window.addEventListener("ROOM_CREATED", handleRoomCreated);
+    return () => window.removeEventListener("ROOM_CREATED", handleRoomCreated);
+  }, [navigate, onClose]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
