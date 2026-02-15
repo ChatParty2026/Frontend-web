@@ -1,13 +1,22 @@
 import { useState } from "react";
-import { X, Lock, Unlock, Users } from "lucide-react";
+import {
+  X,
+  Lock,
+  Unlock,
+  Users,
+  MessageCircle,
+  Skull,
+  Search,
+} from "lucide-react";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // 부모로부터 socket 객체나 전송 함수를 prop으로 받는다고 가정합니다.
   socket: WebSocket | null;
-  currentUser: string; // USER (닉네임)
+  currentUser: string;
 }
+
+type GameType = "MAFIA" | "LIAR" | "JUST_CHAT";
 
 const CreateRoomModal = ({
   isOpen,
@@ -18,8 +27,7 @@ const CreateRoomModal = ({
   const [roomTitle, setRoomTitle] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [password, setPassword] = useState("");
-  // 서버 코드 규격에 맞춰 "LIAR", "MAFIA" 등으로 매핑이 필요할 수 있습니다.
-  const [gameType, setGameType] = useState<"MAFIA" | "LIAR">("MAFIA");
+  const [gameType, setGameType] = useState<GameType>("LIAR");
   const [maxPlayers, setMaxPlayers] = useState(8);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +43,6 @@ const CreateRoomModal = ({
       return;
     }
 
-    // 1. 서버 전송 데이터 구성 (이미지의 와이어프레임 필드 반영)
     const createData = {
       type: "CREATE",
       gameType: gameType,
@@ -46,11 +53,7 @@ const CreateRoomModal = ({
       roomId: crypto.randomUUID(),
     };
 
-    // 2. WebSocket을 통해 방 생성 메시지 전송
     socket.send(JSON.stringify(createData));
-
-    // 참고: 보통 서버에서 CREATE 성공 후 roomId를 포함한 응답을 주면
-    // 그 때 navigate를 하는 것이 정확하지만, 일단 요청 직후 로직은 아래와 같습니다.
     // onClose();
   };
 
@@ -65,14 +68,14 @@ const CreateRoomModal = ({
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/5 rounded-full transition-colors"
+            className="p-2 hover:bg-white/5 rounded-full transition-colors cursor-pointer"
           >
             <X className="w-6 h-6 text-gray-500" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          {/* 방 제목 (title) */}
+          {/* 방 제목 */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest ml-1">
               Room Title
@@ -86,7 +89,7 @@ const CreateRoomModal = ({
             />
           </div>
 
-          {/* 비밀번호 설정 (password) */}
+          {/* 비밀번호 설정 */}
           <div className="space-y-2">
             <div className="flex items-center justify-between ml-1">
               <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest">
@@ -115,30 +118,47 @@ const CreateRoomModal = ({
             />
           </div>
 
-          {/* 게임 종류 (gameType) */}
+          {/* 게임 종류 (3컬럼 그리드 적용) */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest ml-1 text-center block">
-              Select Game
+              Select Mode
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {(["MAFIA", "LIAR"] as const).map((type) => (
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                {
+                  id: "LIAR",
+                  label: "라이어",
+                  icon: <Search className="w-4 h-4 mb-1" />,
+                },
+                {
+                  id: "MAFIA",
+                  label: "마피아",
+                  icon: <Skull className="w-4 h-4 mb-1" />,
+                },
+                {
+                  id: "JUST_CHAT",
+                  label: "잡담",
+                  icon: <MessageCircle className="w-4 h-4 mb-1" />,
+                },
+              ].map((mode) => (
                 <button
-                  key={type}
+                  key={mode.id}
                   type="button"
-                  onClick={() => setGameType(type)}
-                  className={`py-4 rounded-2xl border font-black italic transition-all ${
-                    gameType === type
-                      ? "bg-gradient-to-br from-purple-600 to-pink-600 border-transparent text-white shadow-lg"
+                  onClick={() => setGameType(mode.id as GameType)}
+                  className={`py-3 rounded-2xl border flex flex-col items-center justify-center font-black italic transition-all cursor-pointer ${
+                    gameType === mode.id
+                      ? "bg-gradient-to-br from-purple-600 to-pink-600 border-transparent text-white shadow-lg scale-105"
                       : "bg-white/5 border-white/10 text-gray-500 hover:border-white/20"
                   }`}
                 >
-                  {type === "MAFIA" ? "마피아" : "라이어"}
+                  {mode.icon}
+                  <span className="text-xs uppercase">{mode.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* 인원수 설정 (maxCount) */}
+          {/* 인원수 설정 */}
           <div className="space-y-2">
             <div className="flex justify-between items-center ml-1">
               <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest">
@@ -148,14 +168,14 @@ const CreateRoomModal = ({
                 {maxPlayers}명
               </span>
             </div>
-            <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2">
+            <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-2 px-4">
               <input
                 type="range"
-                min="4"
+                min="2"
                 max="12"
                 value={maxPlayers}
                 onChange={(e) => setMaxPlayers(parseInt(e.target.value))}
-                className="flex-1 accent-purple-500"
+                className="flex-1 accent-purple-500 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
               />
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
                 <Users className="w-4 h-4 text-purple-500" />
@@ -165,7 +185,7 @@ const CreateRoomModal = ({
 
           <button
             type="submit"
-            className="w-full bg-white text-black py-5 rounded-[1.5rem] font-black text-lg hover:bg-purple-500 hover:text-white transition-all shadow-xl hover:shadow-purple-500/20 active:scale-[0.98]"
+            className="w-full bg-white text-black py-5 rounded-[1.5rem] font-black text-lg hover:bg-purple-500 hover:text-white transition-all shadow-xl hover:shadow-purple-500/20 active:scale-[0.98] cursor-pointer"
           >
             CREATE & START
           </button>
