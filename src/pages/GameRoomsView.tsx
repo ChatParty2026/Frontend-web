@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react"; // 1. useRef 추가
 import {
   Plus,
   Search,
@@ -20,7 +20,7 @@ interface Room {
   maxCount: number;
   hasPassword: boolean;
   status: "대기 중" | "게임 중";
-  hostName: string; // 추가된 방장 이름 필드
+  hostName: string;
 }
 
 type GameTypeFilter = "전체" | "MAFIA" | "LIAR" | "JUST_CHAT";
@@ -28,6 +28,40 @@ type GameTypeFilter = "전체" | "MAFIA" | "LIAR" | "JUST_CHAT";
 const GameRoomsView = () => {
   const navigate = useNavigate();
   const { socket, user, isConnected, sendMessage } = useSocket();
+
+  // 2. 중복 실행 방지용 플래그 (Ref는 값이 변해도 리렌더링을 일으키지 않음)
+  const hasJoined = useRef(false);
+
+  // 3. 로비 진입 시 JOIN 메시지 전송 (중복 방지 로직 적용)
+  useEffect(() => {
+   const now = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+   
+   // 1단계: useEffect가 트리거된 이유 확인
+   console.log(`[${now}] 🔍 useEffect 트리거됨 | 현재 hasJoined: ${hasJoined.current}`);
+   console.log(`[${now}] 📊 상태체크 - 연결상태: ${isConnected}, 소켓존재: ${!!socket}, 유저: ${user?.nickname}`);
+
+   // 2단계: 조건부 진입 확인
+   if (isConnected && socket && user) {
+     if (hasJoined.current) {
+       console.warn(`[${now}] ⚠️ 이미 JOIN을 보냈으므로 중단합니다.`);
+       return;
+     }
+
+     // 전송 직전에 즉시 true로 변경 (동기적 차단)
+     hasJoined.current = true;
+     
+     console.log(`[${now}] 🚀 >>> JOIN 메시지 전송 실행! (이후엔 차단되어야 함)`);
+     
+     sendMessage({
+       type: "JOIN",
+       gameType: "MAIN",
+       roomId: "main",
+       sender: user.nickname,
+     });
+   } else {
+     console.log(`[${now}] ⏳ 아직 조건이 충족되지 않음 (준비 중...)`);
+   }
+ }, [isConnected, socket, user, sendMessage]);
 
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,6 +77,7 @@ const GameRoomsView = () => {
     JUST_CHAT: "잡담",
   };
 
+  // 소켓 메시지 수신 리스너
   useEffect(() => {
     if (!socket) return;
 
@@ -62,6 +97,9 @@ const GameRoomsView = () => {
     return () => socket.removeEventListener("message", handleRoomListUpdate);
   }, [socket]);
 
+  
+
+  // 방 목록 필터링 로직
   const filteredRooms = useMemo(() => {
     return rooms.filter((room) => {
       const matchesStatus =
@@ -83,7 +121,6 @@ const GameRoomsView = () => {
   const handleJoinRoom = (room: Room) => {
     if (!user || !isConnected) return;
 
-    // 1. 서버에 JOIN 메시지 전송
     sendMessage({
       type: "JOIN",
       gameType: room.gameType,
@@ -91,7 +128,6 @@ const GameRoomsView = () => {
       sender: user.nickname,
     });
 
-    // 2. 페이지 이동
     if (room.gameType === "JUST_CHAT") {
       navigate(`/chat/${room.roomId}`);
     } else {
@@ -214,7 +250,6 @@ const GameRoomsView = () => {
                       <h3 className="text-xl font-bold group-hover:text-purple-400 transition-colors line-clamp-1">
                         {room.title}
                       </h3>
-                      {/* 방장 정보 추가 */}
                       <div className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-400 transition-colors">
                         <Crown className="w-3 h-3 text-yellow-500/70" />
                         <span className="text-[11px] font-medium truncate">
