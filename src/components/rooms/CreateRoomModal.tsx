@@ -38,11 +38,15 @@ const CreateRoomModal = ({
       const data = e.detail;
       console.log("📥 방 생성 응답 수신:", data);
 
+      // 내비게이션 로직
       if (data.gameType === "JUST_CHAT") {
+        // 잡담 방은 바로 입장
         navigate(`/chat/${data.roomId}`);
       } else {
-        navigate(`/game/${data.gameType.toLowerCase()}/${data.roomId}`);
+        // 게임 방(MAFIA, LIAR 등)은 대기실로 먼저 이동
+        navigate(`/waiting/${data.roomId}`);
       }
+
       onClose(); // 모달 닫기
     };
 
