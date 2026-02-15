@@ -8,6 +8,7 @@ import {
   Skull,
   Search,
 } from "lucide-react";
+import { useSocket } from "../../context/SocketContext";
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -21,9 +22,9 @@ type GameType = "MAFIA" | "LIAR" | "JUST_CHAT";
 const CreateRoomModal = ({
   isOpen,
   onClose,
-  socket,
   currentUser,
 }: CreateRoomModalProps) => {
+  const { sendMessage, isConnected } = useSocket();
   const [roomTitle, setRoomTitle] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const [password, setPassword] = useState("");
@@ -38,7 +39,8 @@ const CreateRoomModal = ({
       return;
     }
 
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
+    // 2. isConnected 상태로 연결 확인
+    if (!isConnected) {
       alert("서버와 연결되어 있지 않습니다.");
       return;
     }
@@ -53,7 +55,9 @@ const CreateRoomModal = ({
       roomId: crypto.randomUUID(),
     };
 
-    socket.send(JSON.stringify(createData));
+    // 3. sendMessage 함수 사용 (JSON.stringify 과정이 내장되어 있어 편리함)
+    sendMessage(createData);
+
     // onClose();
   };
 
