@@ -64,34 +64,38 @@ export const SocketProvider = ({
 
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+  const data = JSON.parse(event.data);
 
-      if (data.status === "SUCCESS" && data.type === "CREATE") {
-        // 커스텀 이벤트 발생 (데이터 전달)
-        const event = new CustomEvent("ROOM_CREATED", { detail: data });
-        window.dispatchEvent(event);
-      }
+  // 1. 방 생성 성공 처리 (기존 유지)
+  if (data.status === "SUCCESS" && data.type === "CREATE") {
+    const event = new CustomEvent("ROOM_CREATED", { detail: data });
+    window.dispatchEvent(event);
+  }
 
-      // 2. 플레이어 리스트 업데이트 이벤트 (신규 추가)
-      // 생성, 입장, 유저 변경 시 모두 이 이벤트를 통해 데이터를 전달합니다.
-      if (data.type === "PLAYER_LIST_UPDATE") {
-        const rid = data.roomId || data.roomld;
-        const players = data.payload.players;
+  // 2. 명단 업데이트 처리 (PLAYER_LIST_UPDATE 뿐만 아니라 GAME_INFO도 처리해야 함!)
+  if (data.type === "PLAYER_LIST_UPDATE" || data.type === "GAME_INFO") {
+    const rid = data.roomId || data.roomld;
+    
+    // GAME_INFO나 PLAYER_LIST_UPDATE의 payload 안에 players가 있는지 확인
+    const players = data.payload?.players;
 
-        // 1. Ref에 최신 데이터 저장 (컴포넌트가 아직 없어도 데이터는 보존됨)
-        lastPlayerList.current[rid] = players;
+    if (rid && players) {
+      // ✅ 여기서 저장해줘야 getLatestPlayers가 나중에 데이터를 줄 수 있음
+      lastPlayerList.current[rid] = players;
+      console.log(`[SocketContext] 명단 캐싱 완료 (${data.type}):`, players);
 
-        // 2. 기존 커스텀 이벤트 발생
-        const playerUpdateEvent = new CustomEvent("PLAYER_LIST_UPDATE", {
-          detail: { players, roomId: rid, gameType: data.gameType },
-        });
-        window.dispatchEvent(playerUpdateEvent);
-      }
+      // 커스텀 이벤트 발생 (필요 시)
+      const playerUpdateEvent = new CustomEvent("PLAYER_LIST_UPDATE", {
+        detail: { players, roomId: rid, gameType: data.gameType },
+      });
+      window.dispatchEvent(playerUpdateEvent);
+    }
+  }
 
-      if (data.type === "ERROR") {
-        alert(data.message);
-      }
-    };
+  if (data.type === "ERROR") {
+    alert(data.message);
+  }
+};
 
     ws.onclose = (e) => {
       console.log("🔌 WebSocket Closed:", e.code, e.reason);
