@@ -35,7 +35,7 @@ const GameRoomsView = () => {
   useEffect(() => {
     if (isConnected && socket && user) {
       if (hasJoined.current) return;
-      
+
       hasJoined.current = true;
       sendMessage({
         type: "JOIN",
@@ -128,28 +128,29 @@ const GameRoomsView = () => {
       roomId: room.roomId,
       sender: user.nickname,
     });
-    
+
     // 이제 이동은 위쪽의 JOIN_SUCCESS 리스너가 담당합니다.
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-8 relative overflow-hidden font-sans">
-      <div className="container mx-auto max-w-[1600px] relative z-10">
-        <div className="grid lg:grid-cols-12 gap-8">
+    <div className="min-h-screen bg-[#0a0a0a] text-white p-6 relative overflow-hidden font-sans">
+      <div className="container mx-auto max-w-[1700px] relative z-10">
+        <div className="grid lg:grid-cols-12 gap-6">
           <div className="lg:col-span-12">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
-              <div className="space-y-6 w-full md:w-auto">
-                <h1 className="text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 uppercase">
+            {/* 헤더 섹션 유지 */}
+            <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-6">
+              <div className="space-y-4 w-full md:w-auto">
+                <h1 className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 uppercase">
                   Game Lobby
                 </h1>
-
-                <div className="flex flex-col gap-4">
-                  <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10 w-fit">
+                {/* 필터 탭 부분 */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-1.5 p-1 bg-white/5 rounded-xl border border-white/10 w-fit">
                     {["전체", "대기중", "플레이중"].map((tab) => (
                       <button
                         key={tab}
                         onClick={() => setStatusTab(tab)}
-                        className={`px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                           statusTab === tab
                             ? "bg-white/10 text-white shadow-lg"
                             : "text-gray-500 hover:text-white"
@@ -205,19 +206,20 @@ const GameRoomsView = () => {
               </div>
             </div>
 
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {/* 그리드 레이아웃 수정: xl에서 5열로 변경 */}
+            <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {isLoading ? (
-                Array.from({ length: 8 }).map((_, i) => (
+                Array.from({ length: 10 }).map((_, i) => (
                   <div
                     key={`skeleton-${i}`}
-                    className="bg-[#121212] border border-white/5 rounded-[2.5rem] p-6 animate-pulse"
+                    className="bg-[#121212] border border-white/5 rounded-[2rem] p-5 animate-pulse h-[200px]"
                   >
-                    <div className="w-20 h-6 bg-white/5 rounded-full mb-6" />
-                    <div className="w-3/4 h-8 bg-white/5 rounded-lg mb-4" />
-                    <div className="w-1/2 h-4 bg-white/5 rounded-lg mb-8" />
-                    <div className="flex justify-between pt-6 border-t border-white/5 mt-auto">
-                      <div className="w-16 h-4 bg-white/5 rounded" />
-                      <div className="w-12 h-4 bg-white/5 rounded" />
+                    <div className="w-16 h-5 bg-white/5 rounded-full mb-4" />
+                    <div className="w-3/4 h-6 bg-white/5 rounded-lg mb-3" />
+                    <div className="w-1/2 h-4 bg-white/5 rounded-lg mb-6" />
+                    <div className="flex justify-between pt-4 border-t border-white/5 mt-auto">
+                      <div className="w-12 h-3 bg-white/5 rounded" />
+                      <div className="w-10 h-3 bg-white/5 rounded" />
                     </div>
                   </div>
                 ))
@@ -226,11 +228,11 @@ const GameRoomsView = () => {
                   <div
                     key={room.roomId}
                     onClick={() => handleJoinRoom(room)}
-                    className="group relative bg-[#121212] border border-white/5 rounded-[2.5rem] p-6 hover:border-purple-500/30 transition-all cursor-pointer overflow-hidden shadow-2xl flex flex-col h-full active:scale-[0.98]"
+                    className="group relative bg-[#121212] border border-white/5 rounded-[2rem] p-5 hover:border-purple-500/30 transition-all cursor-pointer overflow-hidden shadow-2xl flex flex-col h-full active:scale-[0.97]"
                   >
-                    <div className="flex justify-between items-start mb-6">
+                    <div className="flex justify-between items-start mb-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
                           room.status === "대기 중"
                             ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
                             : "bg-orange-500/10 border-orange-500/20 text-orange-500"
@@ -239,32 +241,32 @@ const GameRoomsView = () => {
                         {room.status === "대기 중" ? "WAITING" : "PLAYING"}
                       </span>
                       {room.hasPassword && (
-                        <Lock className="w-4 h-4 text-gray-600" />
+                        <Lock className="w-3.5 h-3.5 text-gray-600" />
                       )}
                     </div>
 
                     <div className="space-y-1 mb-2">
-                      <h3 className="text-xl font-bold group-hover:text-purple-400 transition-colors line-clamp-1">
+                      <h3 className="text-lg font-bold group-hover:text-purple-400 transition-colors line-clamp-1 leading-tight">
                         {room.title}
                       </h3>
                       <div className="flex items-center gap-1.5 text-gray-500 group-hover:text-gray-400 transition-colors">
                         <Crown className="w-3 h-3 text-yellow-500/70" />
-                        <span className="text-[11px] font-medium truncate">
+                        <span className="text-[10px] font-medium truncate">
                           {room.hostName}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto">
-                      <div className="flex items-center gap-2 text-gray-400">
-                        <Users className="w-4 h-4" />
-                        <span className="text-sm font-bold">
-                          {room.count} / {room.maxCount}
+                    <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <Users className="w-3.5 h-3.5" />
+                        <span className="text-xs font-bold">
+                          {room.count}/{room.maxCount}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span
-                          className={`text-[10px] font-black uppercase italic px-2 py-0.5 rounded border border-white/10 ${
+                          className={`text-[9px] font-black uppercase italic px-1.5 py-0.5 rounded border border-white/5 ${
                             room.gameType === "MAFIA"
                               ? "text-red-500"
                               : room.gameType === "LIAR"
@@ -274,14 +276,14 @@ const GameRoomsView = () => {
                         >
                           {GAME_TYPE_LABEL[room.gameType]}
                         </span>
-                        <PlayCircle className="w-6 h-6 text-purple-500 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0" />
+                        <PlayCircle className="w-5 h-5 text-purple-500 opacity-0 group-hover:opacity-100 transition-all translate-x-1 group-hover:translate-x-0" />
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="col-span-full text-center py-32 bg-white/2 border border-dashed border-white/10 rounded-[3rem]">
-                  <p className="text-gray-600 font-bold italic text-xl uppercase tracking-widest">
+                <div className="col-span-full text-center py-24 bg-white/2 border border-dashed border-white/10 rounded-[2.5rem]">
+                  <p className="text-gray-600 font-bold italic text-lg uppercase tracking-widest">
                     No Rooms Found
                   </p>
                 </div>
