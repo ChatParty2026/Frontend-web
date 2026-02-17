@@ -1,22 +1,8 @@
-import {
-  Send,
-  MessageCircle,
-  UserCircle,
-  ChevronRight,
-  ChevronLeft,
-} from "lucide-react";
+import { Send, MessageCircle, UserCircle, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { AuthUser } from "../types/auth";
+import type { ChatMessage } from "../types/chat";
 import { useSocket } from "../context/SocketContext";
-
-interface ChatMessage {
-  id: string;
-  author: string;
-  authorAvatar: string;
-  message: string;
-  timestamp: Date;
-  isSystem?: boolean;
-}
 
 const MOCK_MESSAGES: ChatMessage[] = [
   {
@@ -41,16 +27,13 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [onlineCount, setOnlineCount] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMyMessageRef = useRef(false);
   const currentNickname = user?.nickname;
 
-  // 스크롤 위치 계산 함수
   const handleScroll = () => {
     if (scrollRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-      // 바닥에서 50px 이내에 있으면 최하단으로 간주 (여유값 부여)
       const bottom = scrollHeight - scrollTop <= clientHeight + 50;
       setIsAtBottom(bottom);
     }
@@ -65,64 +48,52 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
   }, []);
 
   useEffect(() => {
-    // 1. 내가 메시지를 보냈거나
-    // 2. 남이 보냈는데 사용자가 이미 최하단에 있었을 경우
     if (isMyMessageRef.current || isAtBottom) {
       scrollToBottom();
       isMyMessageRef.current = false;
     }
   }, [messages, isAtBottom, scrollToBottom]);
 
-  // -----------------------------
-  // 메시지 수신 처리 (이벤트 리스너)
-  // -----------------------------
   useEffect(() => {
-  if (!socket) return;
+    if (!socket) return;
 
-  const handleMessage = (event: MessageEvent) => {
-    const data = JSON.parse(event.data);
+    const handleMessage = (event: MessageEvent) => {
+      const data = JSON.parse(event.data);
 
-    switch (data.type) {
-      case "CHAT":
-        // 🔥 핵심 수정: roomId가 "main"인 메시지(로비 채팅)만 수용합니다.
-        // 만약 게임방 내부라면 각 방의 roomId와 비교하도록 로직을 짜야 합니다.
-        if (data.roomId === "main") {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Math.random().toString(36).substring(2, 9),
-              author: data.sender,
-              authorAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.sender}`,
-              message: data.message,
-              timestamp: new Date(),
-              isSystem: data.sender === "SYSTEM" || data.sender === "시스템",
-            },
-          ]);
-        }
-        break;
-      
-      case "ROOM_LIST_UPDATE":
-        if (data.payload?.lobbyCount !== undefined) {
-          setOnlineCount(data.payload.lobbyCount);
-        }
-        break;
-    }
-  };
+      switch (data.type) {
+        case "CHAT":
+          if (data.roomId === "main") {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: Math.random().toString(36).substring(2, 9),
+                author: data.sender,
+                authorAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.sender}`,
+                message: data.message,
+                timestamp: new Date(),
+                isSystem: data.sender === "SYSTEM" || data.sender === "시스템",
+              },
+            ]);
+          }
+          break;
 
-  socket.addEventListener("message", handleMessage);
-  return () => socket.removeEventListener("message", handleMessage);
-}, [socket]);
+        case "ROOM_LIST_UPDATE":
+          if (data.payload?.lobbyCount !== undefined) {
+            setOnlineCount(data.payload.lobbyCount);
+          }
+          break;
+      }
+    };
 
-  // -----------------------------
-  // 메시지 전송
-  // -----------------------------
+    socket.addEventListener("message", handleMessage);
+    return () => socket.removeEventListener("message", handleMessage);
+  }, [socket]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!newMessage.trim() || !isConnected || !currentNickname) return;
 
     isMyMessageRef.current = true;
-
     sendMessage({
       type: "CHAT",
       gameType: "MAIN",
@@ -130,7 +101,6 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
       sender: currentNickname,
       message: newMessage,
     });
-
     setNewMessage("");
   };
 
@@ -141,7 +111,6 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
     <div className="w-full h-full flex flex-col bg-transparent">
       {/* 헤더 섹션 */}
       <div className="relative shrink-0 p-6 flex items-center justify-between border-b border-white/5 bg-white/5 rounded-tl-[2.5rem]">
-        {/* 2. 토글 버튼 (왼쪽 상단 플로팅) */}
         <button
           onClick={onToggle}
           className="absolute left-0 top-[37px] -translate-x-full z-50 flex items-center justify-center w-10 h-12 bg-[#121212] border border-white/10 border-r-0 rounded-l-2xl transition-all duration-300 hover:bg-purple-600 group cursor-pointer shadow-[-4px_0_15px_rgba(0,0,0,0.5)]"
@@ -172,7 +141,7 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
         </div>
       </div>
 
-      {/* 채팅 메시지 영역 */}
+      {/* 메시지 영역 */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -210,9 +179,7 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
                   </div>
 
                   <div
-                    className={`flex flex-col space-y-1.5 max-w-[75%] ${
-                      isMe ? "items-end" : "items-start"
-                    }`}
+                    className={`flex flex-col space-y-1.5 max-w-[75%] ${isMe ? "items-end" : "items-start"}`}
                   >
                     <div className="flex items-center gap-2 px-1">
                       <span className="text-[10px] font-black text-gray-400 uppercase italic">
@@ -241,7 +208,6 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
             </div>
           );
         })}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* 입력 섹션 */}
@@ -257,7 +223,7 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
           <button
             type="submit"
             disabled={!newMessage.trim() || !isConnected}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl transition-all disabled:opacity-30 disabled:grayscale cursor-pointer disabled:cursor-default"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl transition-all disabled:opacity-30 disabled:grayscale cursor-pointer"
           >
             <Send className="w-4 h-4" />
           </button>

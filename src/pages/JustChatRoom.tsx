@@ -1,26 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Send, LogOut, MessageSquare, Users, UserCircle, Hash } from "lucide-react";
+import {
+  Send,
+  LogOut,
+  MessageSquare,
+  Users,
+  UserCircle,
+  Hash,
+} from "lucide-react";
 import { useSocket } from "../context/SocketContext";
-
-interface ChatMessage {
-  id: string;
-  sender: string;
-  message: string;
-  timestamp: Date;
-  isSystem?: boolean;
-}
+import type { ChatMessage } from "../types/chat";
 
 const JustChatRoom = () => {
   const { roomId } = useParams();
-  const { getLatestPlayers, sendMessage, socket, isConnected, user } = useSocket();
+  const { getLatestPlayers, sendMessage, socket, isConnected, user } =
+    useSocket();
   const navigate = useNavigate();
 
-  // 상태 관리
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [roomTitle, setRoomTitle] = useState("로딩 중..."); // 방 제목 상태
-  const [gameType, setGameType] = useState(""); // 게임 타입 상태
+  const [roomTitle, setRoomTitle] = useState("로딩 중...");
+  const [gameType, setGameType] = useState("");
   const [participants, setParticipants] = useState<string[]>(() => {
     return roomId ? getLatestPlayers(roomId) : [];
   });
@@ -65,8 +65,9 @@ const JustChatRoom = () => {
             setMessages((prev) => [
               ...prev,
               {
-                id: crypto.randomUUID(), // 더 안전한 ID 생성
-                sender: data.sender,
+                id: crypto.randomUUID(),
+                author: data.sender,
+                authorAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.sender}`,
                 message: data.message,
                 timestamp: new Date(),
                 isSystem: data.sender === "SYSTEM",
@@ -75,18 +76,13 @@ const JustChatRoom = () => {
             break;
 
           case "GAME_INFO":
-            // 서버에서 내려주는 방 제목과 게임 타입 저장
             if (data.title) setRoomTitle(data.title);
             if (data.gameType) setGameType(data.gameType);
-            if (data.payload?.players) {
-              setParticipants(data.payload.players);
-            }
+            if (data.payload?.players) setParticipants(data.payload.players);
             break;
 
           case "PLAYER_LIST_UPDATE":
-            if (data.payload?.players) {
-              setParticipants(data.payload.players);
-            }
+            if (data.payload?.players) setParticipants(data.payload.players);
             break;
         }
       } catch (e) {
@@ -114,7 +110,6 @@ const JustChatRoom = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center p-4 md:p-6">
-      {/* 상단 정보 바 */}
       <div className="w-full max-w-5xl flex justify-between items-center mb-6 bg-[#121212] p-5 rounded-[2rem] border border-white/10 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-purple-500/20 rounded-2xl">
@@ -122,7 +117,7 @@ const JustChatRoom = () => {
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-white tracking-tight uppercase tracking-tighter">
+              <h2 className="text-xl font-black text-white tracking-tight uppercase">
                 {roomTitle}
               </h2>
               {gameType && (
@@ -133,7 +128,9 @@ const JustChatRoom = () => {
             </div>
             <div className="flex items-center gap-1 text-gray-500">
               <Hash className="w-3 h-3" />
-              <span className="text-xs font-mono tracking-widest uppercase opacity-50">Room Session</span>
+              <span className="text-xs font-mono tracking-widest uppercase opacity-50">
+                Room Session
+              </span>
             </div>
           </div>
         </div>
@@ -146,7 +143,7 @@ const JustChatRoom = () => {
       </div>
 
       <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 h-[calc(100vh-180px)]">
-        {/* 좌측: 참여자 목록 */}
+        {/* 사이드바: 참여자 */}
         <div className="lg:col-span-1 bg-[#121212] border border-white/10 rounded-[2.5rem] p-6 flex flex-col overflow-hidden shadow-2xl">
           <div className="flex items-center justify-between mb-6 px-2">
             <div className="flex items-center gap-2">
@@ -155,28 +152,29 @@ const JustChatRoom = () => {
                 Participants
               </span>
             </div>
-            {/* 참여자 수 강조 디자인 */}
-            <div className="bg-purple-600 px-3 py-1 rounded-full shadow-[0_0_15px_rgba(147,51,234,0.3)]">
-              <span className="text-sm font-black text-white leading-none">
+            <div className="bg-purple-600 px-3 py-1 rounded-full">
+              <span className="text-sm font-black text-white">
                 {participants.length}
               </span>
             </div>
           </div>
-          
+
           <div className="space-y-3 overflow-y-auto custom-scrollbar pr-1">
             {participants.map((name, i) => (
               <div
                 key={`${name}-${i}`}
                 className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
-                  name === user?.nickname 
-                  ? "bg-purple-500/10 border-purple-500/30" 
-                  : "bg-white/5 border-white/5"
+                  name === user?.nickname
+                    ? "bg-purple-500/10 border-purple-500/30"
+                    : "bg-white/5 border-white/5"
                 }`}
               >
                 <div className="w-8 h-8 bg-purple-500/20 rounded-xl flex items-center justify-center text-[11px] font-black text-purple-400 border border-purple-500/20">
                   {name[0].toUpperCase()}
                 </div>
-                <span className={`text-sm font-bold ${name === user?.nickname ? "text-purple-300" : "text-gray-300"}`}>
+                <span
+                  className={`text-sm font-bold ${name === user?.nickname ? "text-purple-300" : "text-gray-300"}`}
+                >
                   {name} {name === user?.nickname && "(Me)"}
                 </span>
               </div>
@@ -184,7 +182,7 @@ const JustChatRoom = () => {
           </div>
         </div>
 
-        {/* 우측: 메인 채팅 창 */}
+        {/* 채팅창 */}
         <div className="lg:col-span-3 bg-[#121212] border border-white/10 rounded-[2.5rem] flex flex-col overflow-hidden shadow-2xl">
           <div
             ref={scrollRef}
@@ -197,10 +195,8 @@ const JustChatRoom = () => {
             </div>
 
             {messages.map((msg) => {
-              const isMe = msg.sender === user?.nickname;
-              const isSystem = msg.isSystem;
-
-              if (isSystem) {
+              const isMe = msg.author === user?.nickname;
+              if (msg.isSystem) {
                 return (
                   <div key={msg.id} className="flex justify-center my-2">
                     <span className="text-[11px] font-bold text-purple-400/80 bg-purple-400/5 px-3 py-1 rounded-lg border border-purple-400/10">
@@ -220,10 +216,12 @@ const JustChatRoom = () => {
                       <UserCircle className="w-5 h-5 text-gray-600" />
                     </div>
                   )}
-                  <div className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                  <div
+                    className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                  >
                     {!isMe && (
-                      <span className="text-[10px] font-black text-gray-500 mb-1 ml-1 uppercase tracking-tighter">
-                        {msg.sender}
+                      <span className="text-[10px] font-black text-gray-500 mb-1 ml-1 uppercase">
+                        {msg.author}
                       </span>
                     )}
                     <div
@@ -255,7 +253,7 @@ const JustChatRoom = () => {
             <button
               type="submit"
               disabled={!message.trim()}
-              className="px-6 bg-white text-black hover:bg-purple-500 hover:text-white rounded-2xl transition-all font-black flex items-center justify-center disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer active:scale-95 shadow-lg"
+              className="px-6 bg-white text-black hover:bg-purple-500 hover:text-white rounded-2xl transition-all font-black flex items-center justify-center disabled:opacity-20 cursor-pointer active:scale-95 shadow-lg"
             >
               <Send className="w-5 h-5" />
             </button>
