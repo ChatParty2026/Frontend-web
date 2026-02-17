@@ -8,15 +8,17 @@ const GameLayout = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const location = useLocation();
 
-  // 로비(/rooms) 인지 확인
-  const isLobby = location.pathname === "/rooms";
+  // 💡 [수정] 이제 isLobby 여부와 상관없이 isChatOpen 상태만 체크합니다.
+  // 채팅창이 열려있을 때만 오른쪽 여백(Padding Right)을 줍니다.
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white relative overflow-hidden">
       {/* 메인 콘텐츠 영역 */}
       <main
         className={`transition-all duration-500 ease-in-out ${
-          isLobby && isChatOpen ? "pr-[30%] xl:pr-[25%]" : "pr-0"
+          isChatOpen 
+            ? "pr-[85%] md:pr-[30%] xl:pr-[25%]" // 채팅창 너비만큼 본문 우측 여백 확보
+            : "pr-0"
         }`}
       >
         <Outlet />
