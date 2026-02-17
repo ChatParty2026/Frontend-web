@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react"; // 1. useRef 추가
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Plus,
   Search,
@@ -29,39 +29,41 @@ const GameRoomsView = () => {
   const navigate = useNavigate();
   const { socket, user, isConnected, sendMessage } = useSocket();
 
-  // 2. 중복 실행 방지용 플래그 (Ref는 값이 변해도 리렌더링을 일으키지 않음)
   const hasJoined = useRef(false);
 
-  // 3. 로비 진입 시 JOIN 메시지 전송 (중복 방지 로직 적용)
+  // 로비 진입 시 로비 채널 JOIN (중복 방지)
   useEffect(() => {
-   const now = new Date().toLocaleTimeString('ko-KR', { hour12: false });
-   
-   // 1단계: useEffect가 트리거된 이유 확인
-   console.log(`[${now}] 🔍 useEffect 트리거됨 | 현재 hasJoined: ${hasJoined.current}`);
-   console.log(`[${now}] 📊 상태체크 - 연결상태: ${isConnected}, 소켓존재: ${!!socket}, 유저: ${user?.nickname}`);
+    if (isConnected && socket && user) {
+      if (hasJoined.current) return;
+      
+      hasJoined.current = true;
+      sendMessage({
+        type: "JOIN",
+        gameType: "MAIN",
+        roomId: "main",
+        sender: user.nickname,
+      });
+    }
+  }, [isConnected, socket, user, sendMessage]);
 
-   // 2단계: 조건부 진입 확인
-   if (isConnected && socket && user) {
-     if (hasJoined.current) {
-       console.warn(`[${now}] ⚠️ 이미 JOIN을 보냈으므로 중단합니다.`);
-       return;
-     }
+  // ✅ [추가] 방 입장 성공 시 페이지 이동 리스너
+  // 서버에서 SUCCESS 응답이 온 후 캐시가 업데이트되면 이동합니다.
+  useEffect(() => {
+    const handleJoinSuccess = (e: any) => {
+      const { roomId, gameType } = e.detail;
+      // 로비(main) 조인은 무시하고 실제 게임방 조인일 때만 이동
+      if (roomId === "main") return;
 
-     // 전송 직전에 즉시 true로 변경 (동기적 차단)
-     hasJoined.current = true;
-     
-     console.log(`[${now}] 🚀 >>> JOIN 메시지 전송 실행! (이후엔 차단되어야 함)`);
-     
-     sendMessage({
-       type: "JOIN",
-       gameType: "MAIN",
-       roomId: "main",
-       sender: user.nickname,
-     });
-   } else {
-     console.log(`[${now}] ⏳ 아직 조건이 충족되지 않음 (준비 중...)`);
-   }
- }, [isConnected, socket, user, sendMessage]);
+      if (gameType === "JUST_CHAT") {
+        navigate(`/chat/${roomId}`);
+      } else {
+        navigate(`/waiting/${roomId}`);
+      }
+    };
+
+    window.addEventListener("JOIN_SUCCESS", handleJoinSuccess);
+    return () => window.removeEventListener("JOIN_SUCCESS", handleJoinSuccess);
+  }, [navigate]);
 
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +79,7 @@ const GameRoomsView = () => {
     JUST_CHAT: "잡담",
   };
 
-  // 소켓 메시지 수신 리스너
+  // 소켓 메시지 수신 리스너 (방 목록 업데이트)
   useEffect(() => {
     if (!socket) return;
 
@@ -96,8 +98,6 @@ const GameRoomsView = () => {
     socket.addEventListener("message", handleRoomListUpdate);
     return () => socket.removeEventListener("message", handleRoomListUpdate);
   }, [socket]);
-
-  
 
   // 방 목록 필터링 로직
   const filteredRooms = useMemo(() => {
@@ -118,6 +118,7 @@ const GameRoomsView = () => {
     });
   }, [rooms, statusTab, gameTypeTab, searchQuery]);
 
+  // ✅ [수정] 이동 로직을 제거하고 메시지만 전송
   const handleJoinRoom = (room: Room) => {
     if (!user || !isConnected) return;
 
@@ -127,12 +128,8 @@ const GameRoomsView = () => {
       roomId: room.roomId,
       sender: user.nickname,
     });
-
-    if (room.gameType === "JUST_CHAT") {
-      navigate(`/chat/${room.roomId}`);
-    } else {
-      navigate(`/waiting/${room.roomId}`);
-    }
+    
+    // 이제 이동은 위쪽의 JOIN_SUCCESS 리스너가 담당합니다.
   };
 
   return (

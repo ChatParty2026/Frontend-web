@@ -22,7 +22,7 @@ interface LiveChatProps {
 }
 
 const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
-  const { socket, sendMessage, isConnected } = useSocket();
+  const { sendMessage, isConnected } = useSocket();
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
   const [newMessage, setNewMessage] = useState("");
   const [onlineCount, setOnlineCount] = useState(0);
@@ -31,6 +31,7 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
   const isMyMessageRef = useRef(false);
   const currentNickname = user?.nickname;
 
+  // 스크롤 핸들러
   const handleScroll = () => {
     if (scrollRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
@@ -39,6 +40,7 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
     }
   };
 
+  // 하단 스크롤 이동
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
@@ -47,6 +49,7 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
     }
   }, []);
 
+  // 메시지 추가 시 스크롤 처리
   useEffect(() => {
     if (isMyMessageRef.current || isAtBottom) {
       scrollToBottom();
@@ -54,41 +57,66 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
     }
   }, [messages, isAtBottom, scrollToBottom]);
 
+  // ✅ 중앙 집중형 이벤트 구독 (SocketProvider에서 쏘는 이벤트들)
   useEffect(() => {
-    if (!socket) return;
-
-    const handleMessage = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-
-      switch (data.type) {
-        case "CHAT":
-          if (data.roomId === "main") {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: Math.random().toString(36).substring(2, 9),
-                author: data.sender,
-                authorAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.sender}`,
-                message: data.message,
-                timestamp: new Date(),
-                isSystem: data.sender === "SYSTEM" || data.sender === "시스템",
-              },
-            ]);
-          }
-          break;
-
-        case "ROOM_LIST_UPDATE":
-          if (data.payload?.lobbyCount !== undefined) {
-            setOnlineCount(data.payload.lobbyCount);
-          }
-          break;
+    // 1. 일반 채팅 메시지 처리
+    const handleNewChat = (e: any) => {
+      const data = e.detail;
+      // 로비(MAIN) 채팅만 수신
+      if (data.gameType === "MAIN") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Math.random().toString(36).substring(2, 9),
+            author: data.sender,
+            authorAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.sender}`,
+            message: data.message,
+            timestamp: new Date(),
+            isSystem: data.sender === "SYSTEM",
+          },
+        ]);
       }
     };
 
-    socket.addEventListener("message", handleMessage);
-    return () => socket.removeEventListener("message", handleMessage);
-  }, [socket]);
+    // 2. 시스템 공지 및 입퇴장 알림 처리
+    const handleNotice = (e: any) => {
+      const data = e.detail;
+      if (data.gameType === "MAIN") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Math.random().toString(36).substring(2, 9),
+            author: "시스템",
+            authorAvatar: "",
+            message: data.message,
+            timestamp: new Date(),
+            isSystem: true,
+          },
+        ]);
+      }
+    };
 
+    // 3. 온라인 접속자 수 업데이트
+    const handleRoomUpdate = (e: any) => {
+      const payload = e.detail;
+      if (payload?.lobbyCount !== undefined) {
+        setOnlineCount(payload.lobbyCount);
+      }
+    };
+
+    // 전역 이벤트 리스너 등록
+    window.addEventListener("NEW_CHAT", handleNewChat);
+    window.addEventListener("SYSTEM_NOTICE", handleNotice);
+    window.addEventListener("ROOM_LIST_UPDATED", handleRoomUpdate);
+
+    return () => {
+      window.removeEventListener("NEW_CHAT", handleNewChat);
+      window.removeEventListener("SYSTEM_NOTICE", handleNotice);
+      window.removeEventListener("ROOM_LIST_UPDATED", handleRoomUpdate);
+    };
+  }, []);
+
+  // 채팅 전송
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !isConnected || !currentNickname) return;

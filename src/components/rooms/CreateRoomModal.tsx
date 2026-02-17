@@ -34,19 +34,23 @@ const CreateRoomModal = ({
 
   useEffect(() => {
     const handleRoomCreated = (e: any) => {
-      const data = e.detail;
-      console.log("📥 방 생성 응답 수신:", data);
+      // SocketProvider에서 이미 data.payload를 detail로 넘겨줌
+      const data = e.detail; 
+      
+      console.log("📥 방 생성 성공 데이터:", data);
 
-      // 내비게이션 로직
-      if (data.gameType === "JUST_CHAT") {
-        // 잡담 방은 바로 입장
-        navigate(`/chat/${data.roomId}`);
+      const targetRoomId = data.roomId;
+      const targetGameType = data.gameType;
+
+      if (!targetRoomId) return;
+
+      if (targetGameType === "JUST_CHAT") {
+        navigate(`/chat/${targetRoomId}`);
       } else {
-        // 게임 방(MAFIA, LIAR 등)은 대기실로 먼저 이동
-        navigate(`/waiting/${data.roomId}`);
+        navigate(`/waiting/${targetRoomId}`);
       }
 
-      onClose(); // 모달 닫기
+      onClose();
     };
 
     window.addEventListener("ROOM_CREATED", handleRoomCreated);
