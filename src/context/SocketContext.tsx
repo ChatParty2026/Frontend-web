@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useCallback,
   type ReactNode,
 } from "react";
 import type { AuthUser } from "../types/auth";
@@ -18,13 +19,6 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType | null>(null);
 
-export const useSocket = () => {
-  const context = useContext(SocketContext);
-  if (!context)
-    throw new Error("useSocket must be used within a SocketProvider");
-  return context;
-};
-
 export const SocketProvider = ({
   children,
   user,
@@ -35,111 +29,86 @@ export const SocketProvider = ({
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
-  const lastPlayerList = useRef<{ [roomId: string]: string[] }>({}); // roomId별 저장
+  const lastPlayerList = useRef<{ [roomId: string]: string[] }>({});
 
+  // 1. 메시지 처리 로직 분리 (메모리 최적화)
+  const handleIncomingMessage = useCallback((event: MessageEvent) => {
+    const data = JSON.parse(event.data);
+    const rid = data.roomId || data.roomld;
+
+    switch (data.type) {
+      case "CREATE": {
+        if (data.status === "SUCCESS") {
+          window.dispatchEvent(
+            new CustomEvent("ROOM_CREATED", { detail: data }),
+          );
+        }
+        break;
+      }
+
+      case "PLAYER_LIST_UPDATE":
+      case "GAME_INFO": {
+        const players = data.payload?.players;
+        if (rid && players) {
+          lastPlayerList.current[rid] = players;
+          window.dispatchEvent(
+            new CustomEvent("PLAYER_LIST_UPDATE", {
+              detail: { players, roomId: rid, gameType: data.gameType },
+            }),
+          );
+        }
+        break;
+      }
+
+      case "ERROR": {
+        alert(data.message);
+        break;
+      }
+    }
+  }, []);
+
+  // 2. 소켓 연결 로직
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    if (!user || !token) return;
-
-    // 중복 연결 방지 (이미 객체가 있고 닫힌 상태가 아니라면 유지)
     if (
-      socketRef.current &&
-      socketRef.current.readyState !== WebSocket.CLOSED
-    ) {
+      !user ||
+      !token ||
+      (socketRef.current && socketRef.current.readyState !== WebSocket.CLOSED)
+    )
       return;
-    }
 
-    console.log("🚀 Initializing WebSocket for:", user.nickname);
     const ws = new WebSocket(`${import.meta.env.VITE_WS_URL}?token=${token}`);
-
-    // 생성 즉시 Ref에 저장 (가장 중요)
     socketRef.current = ws;
 
-
     ws.onopen = () => {
-      console.log("✅ WebSocket Open State");
-      setIsConnected(true); // 이제 GameRoomsView가 이걸 보고 움직입니다.
+      setIsConnected(true);
       setSocket(ws);
     };
 
+    ws.onmessage = handleIncomingMessage;
 
-    ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-
-  // 1. 방 생성 성공 처리 (기존 유지)
-  if (data.status === "SUCCESS" && data.type === "CREATE") {
-    const event = new CustomEvent("ROOM_CREATED", { detail: data });
-    window.dispatchEvent(event);
-  }
-
-  // 2. 명단 업데이트 처리 (PLAYER_LIST_UPDATE 뿐만 아니라 GAME_INFO도 처리해야 함!)
-  if (data.type === "PLAYER_LIST_UPDATE" || data.type === "GAME_INFO") {
-    const rid = data.roomId || data.roomld;
-    
-    // GAME_INFO나 PLAYER_LIST_UPDATE의 payload 안에 players가 있는지 확인
-    const players = data.payload?.players;
-
-    if (rid && players) {
-      // ✅ 여기서 저장해줘야 getLatestPlayers가 나중에 데이터를 줄 수 있음
-      lastPlayerList.current[rid] = players;
-      console.log(`[SocketContext] 명단 캐싱 완료 (${data.type}):`, players);
-
-      // 커스텀 이벤트 발생 (필요 시)
-      const playerUpdateEvent = new CustomEvent("PLAYER_LIST_UPDATE", {
-        detail: { players, roomId: rid, gameType: data.gameType },
-      });
-      window.dispatchEvent(playerUpdateEvent);
-    }
-  }
-
-  if (data.type === "ERROR") {
-    alert(data.message);
-  }
-};
-
-    ws.onclose = (e) => {
-      console.log("🔌 WebSocket Closed:", e.code, e.reason);
+    ws.onclose = () => {
       setIsConnected(false);
       setSocket(null);
-      // close 시점에만 null 처리
       socketRef.current = null;
     };
 
-    ws.onerror = (error) => {
-      console.error("❌ WebSocket Error:", error);
-    };
-
-    // Clean-up 시 소켓을 아예 죽이지 않고,
-    // 정말 언마운트될 때만 닫고 싶다면 의존성 배열을 신중히 관리해야 합니다.
     return () => {
-      //Strict Mode 대응: 바로 닫지 않고 상태를 체크하거나 생략 가능
-      //만약 페이지 이동 시 소켓을 유지해야 한다면 아래 코드를 주석 처리하세요.
-      //ws.close();
+      // 필요 시 주석 해제하여 StrictMode 대응
+      // ws.close();
     };
-  }, [user?.nickname]); // 객체 전체보다 특정 값(nickname)을 감시하는 게 안정적입니다.
+  }, [user?.nickname, handleIncomingMessage]);
 
-  const sendMessage = (message: object) => {
-    // 1. Ref가 있는지 확인
-    const currentWs = socketRef.current;
-
-    if (currentWs && currentWs.readyState === WebSocket.OPEN) {
-      console.log("📤 Sending Message:", message);
-      currentWs.send(JSON.stringify(message));
-    } else {
-      console.warn("⚠️ Send Failed:", {
-        hasRef: !!currentWs,
-        readyState: currentWs?.readyState,
-        isConnected,
-      });
-
-      // 만약 Ref는 없는데 이전에 연결된 적이 있다면 재연결 유도 로직이 필요할 수 있음
+  // 3. 헬퍼 함수들
+  const sendMessage = useCallback((message: object) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(message));
     }
-  };
+  }, []);
 
-  // 최신 데이터를 안전하게 꺼내올 함수
-  const getLatestPlayers = (roomId: string) => {
+  const getLatestPlayers = useCallback((roomId: string) => {
     return lastPlayerList.current[roomId] || [];
-  };
+  }, []);
 
   return (
     <SocketContext.Provider
@@ -148,4 +117,11 @@ export const SocketProvider = ({
       {children}
     </SocketContext.Provider>
   );
+};
+
+export const useSocket = () => {
+  const context = useContext(SocketContext);
+  if (!context)
+    throw new Error("useSocket must be used within a SocketProvider");
+  return context;
 };
