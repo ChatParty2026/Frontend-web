@@ -9,21 +9,39 @@ const JustChatRoom = () => {
   const { getLatestPlayers, getRoomInfo, sendMessage, isConnected, user } = useSocket();
   const navigate = useNavigate();
 
+  // 1. 상태 관리 (방장 이름 필드 추가)
+  const [roomTitle, setRoomTitle] = useState("즐거운 채팅방");
+  const [gameType, setGameType] = useState("");
+  const [hostName, setHostName] = useState("");
+  const [participants, setParticipants] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  
-  // ✅ 초기값 세팅
-  const [roomTitle, setRoomTitle] = useState(() => {
-    return roomId ? getRoomInfo(roomId)?.title || "즐거운 채팅방" : "즐거운 채팅방";
-  });
-  const [gameType, setGameType] = useState(() => {
-    return roomId ? getRoomInfo(roomId)?.gameType || "" : "";
-  });
-  const [participants, setParticipants] = useState<string[]>(() => {
-    return roomId ? getLatestPlayers(roomId) : [];
-  });
 
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 2. 새로고침 및 연결 끊김 감지 -> 즉시 로비로 이동
+  useEffect(() => {
+    if (!isConnected) {
+      // alert 없이 바로 이동하고 싶다면 alert 줄을 지우세요.
+      navigate("/rooms", { replace: true });
+    }
+  }, [isConnected, navigate]);
+
+  // 3. 데이터 초기화 및 캐시 동기화
+  useEffect(() => {
+    if (!isConnected || !roomId) return;
+
+    const info = getRoomInfo(roomId);
+    if (info) {
+      setRoomTitle(info.title || "즐거운 채팅방");
+      setGameType(info.gameType || "");
+      setHostName(info.hostName || "");
+    }
+    const players = getLatestPlayers(roomId);
+    if (players.length > 0) {
+      setParticipants(players);
+    }
+  }, [isConnected, roomId, getRoomInfo, getLatestPlayers]);
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
@@ -33,6 +51,7 @@ const JustChatRoom = () => {
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
+  // 4. 소켓 이벤트 리스너
   useEffect(() => {
     if (!roomId) return;
 
@@ -68,6 +87,7 @@ const JustChatRoom = () => {
       if (data.roomId === roomId) {
         if (data.players) setParticipants(data.players);
         if (data.title) setRoomTitle(data.title);
+        if (data.hostName) setHostName(data.hostName); // 방장 정보 업데이트
       }
     };
 
@@ -93,11 +113,12 @@ const JustChatRoom = () => {
     if (isConnected && user && roomId) {
       sendMessage({ type: "LEAVE", roomId, sender: user.nickname, gameType: "JUST_CHAT" });
     }
-    navigate("/rooms");
+    navigate("/rooms", { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center p-4 md:p-6 font-sans">
+      {/* 헤더 영역 */}
       <div className="w-full max-w-5xl flex justify-between items-center mb-6 bg-[#121212] p-5 rounded-[2rem] border border-white/10 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-purple-500/20 rounded-2xl">
@@ -137,7 +158,7 @@ const JustChatRoom = () => {
           </div>
           <div className="space-y-3 overflow-y-auto custom-scrollbar pr-1">
             {participants.map((name, i) => {
-              const isHost = name === getRoomInfo(roomId || "")?.hostName;
+              const isHost = name === hostName; // 수정된 상태값 사용
               const isMe = name === user?.nickname;
 
               return (
@@ -169,7 +190,9 @@ const JustChatRoom = () => {
                   </div>
 
                   {isHost && (
-                    <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500/20 animate-pulse" />
+                    <div className="flex items-center gap-1">
+                      <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500/20 animate-pulse" />
+                    </div>
                   )}
                 </div>
               );
