@@ -227,7 +227,7 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
                       </span>
                     </div>
                     <div
-                      className={`px-4 py-2.5 rounded-2xl text-sm font-medium leading-relaxed shadow-lg ${
+                      className={`px-3.5 py-2 rounded-2xl text-sm font-medium leading-relaxed shadow-lg ${
                         isMe
                           ? "bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-tr-none"
                           : "bg-white/5 text-gray-300 border border-white/10 rounded-tl-none"

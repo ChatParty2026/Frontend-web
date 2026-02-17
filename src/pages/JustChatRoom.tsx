@@ -227,7 +227,7 @@ const JustChatRoom = () => {
                       </span>
                     )}
                     <div
-                      className={`px-4 py-2.5 rounded-2xl text-sm max-w-[320px] break-words shadow-sm ${
+                      className={`px-3.5 py-2 rounded-2xl text-sm max-w-[320px] break-words shadow-sm ${
                         isMe
                           ? "bg-purple-600 text-white rounded-tr-none"
                           : "bg-white/5 text-gray-300 border border-white/10 rounded-tl-none"
