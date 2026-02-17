@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { PenLine, Send, UserCircle } from "lucide-react";
+import { PenLine, Send } from "lucide-react";
 import { getLatestPosts, createPost, deletePost } from "../../api/boardService";
 import type { AuthUser } from "../../types/auth";
 import PostItem from "./PostItem";
@@ -45,7 +45,7 @@ const Board = ({ user }: { user: AuthUser | null }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 비로그인 사용자 및 유효성 검사 (서버 요청 전 차단)
+    // ROLE_USER 권한이 있는 정식 사용자만 글쓰기 가능
     if (!newPost.trim() || !user || user.role !== "USER" || isSubmitting) return;
 
     try {
@@ -80,8 +80,8 @@ const Board = ({ user }: { user: AuthUser | null }) => {
   const handleLike = (postId: string) => {
     setPosts((prev) =>
       prev.map((post) =>
-        post.id === postId ? { ...post, likes: post.likes + 1 } : post,
-      ),
+        post.id === postId ? { ...post, likes: post.likes + 1 } : post
+      )
     );
   };
 
@@ -93,8 +93,8 @@ const Board = ({ user }: { user: AuthUser | null }) => {
   const handleCommentSuccess = (postId: string) => {
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
-        post.id === postId ? { ...post, comments: post.comments + 1 } : post,
-      ),
+        post.id === postId ? { ...post, comments: post.comments + 1 } : post
+      )
     );
   };
 
@@ -112,20 +112,21 @@ const Board = ({ user }: { user: AuthUser | null }) => {
           </div>
         </div>
 
-        {/* 글쓰기 영역: 로그인 여부 및 ROLE_USER 권한 체크 */}
+        {/* 글쓰기 영역: user.avatar를 직접 사용 */}
         {user?.role === "USER" ? (
           <form onSubmit={handleSubmit} className="mb-10 group">
             <div className="relative bg-white/5 border border-white/10 rounded-[2rem] p-6 focus-within:border-purple-500/50 transition-all shadow-2xl">
               <div className="flex gap-4">
                 <div className="avatar hidden sm:block">
-                  <div className="w-12 h-12 rounded-2xl ring-2 ring-purple-500/30 overflow-hidden">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.nickname} />
-                    ) : (
-                      <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                        <UserCircle className="w-8 h-8 text-gray-400" />
-                      </div>
-                    )}
+                  <div className="w-12 h-12 rounded-2xl ring-2 ring-purple-500/30 overflow-hidden bg-gray-800">
+                    <img 
+                      src={user.avatar} 
+                      alt={user.nickname} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.nickname}`;
+                      }}
+                    />
                   </div>
                 </div>
                 <div className="flex-1 space-y-4">
@@ -155,10 +156,9 @@ const Board = ({ user }: { user: AuthUser | null }) => {
             </div>
           </form>
         ) : (
-          /* 비로그인 혹은 권한 부족 시 표시되는 안내 창 */
           <div className="p-6 bg-white/5 border border-dashed border-white/10 rounded-[2rem] text-center mb-10">
             <p className="text-gray-500 font-bold uppercase tracking-widest text-sm">
-              Login to join the conversation
+              Login as a member to join the conversation
             </p>
           </div>
         )}
