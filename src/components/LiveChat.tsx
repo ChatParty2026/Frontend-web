@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { AuthUser } from "../types/auth";
 import type { ChatMessage } from "../types/chat";
 import { useSocket } from "../context/SocketContext";
+import { SOCKET_EVENTS } from "../constants/events";
 
 const MOCK_MESSAGES: ChatMessage[] = [
   {
@@ -57,76 +58,75 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
     }
   }, [messages, isAtBottom, scrollToBottom]);
 
-  // ✅ 중앙 집중형 이벤트 구독 (SocketProvider에서 쏘는 이벤트들)
-  useEffect(() => {
-    // 1. 일반 채팅 메시지 처리
-    const handleNewChat = (e: any) => {
-      const data = e.detail;
-      // 로비(MAIN) 채팅만 수신
-      if (data.gameType === "MAIN") {
-        setMessages((prev) => [
+  // ✅ 이벤트 핸들러 정의
+  const handleNewChat = useCallback((e: any) => {
+    const data = e.detail;
+    if (data.gameType === "MAIN") {
+      setMessages((prev) => {
+        const nextMessages = [
           ...prev,
           {
-            id: Math.random().toString(36).substring(2, 9),
+            id: `${data.timestamp}-${Math.random().toString(36).substring(2, 9)}`,
             author: data.sender,
-            authorAvatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.sender}`,
+            authorAvatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.sender}`,
             message: data.message,
-            timestamp: new Date(),
+            timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
             isSystem: data.sender === "SYSTEM",
           },
-        ]);
-      }
-    };
+        ];
+        // 🚀 성능 최적화: 최신 100개만 유지
+        return nextMessages.slice(-100);
+      });
+    }
+  }, []);
 
-    // 2. 시스템 공지 및 입퇴장 알림 처리
-    const handleNotice = (e: any) => {
-      const data = e.detail;
-      if (data.gameType === "MAIN") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Math.random().toString(36).substring(2, 9),
-            author: "시스템",
-            authorAvatar: "",
-            message: data.message,
-            timestamp: new Date(),
-            isSystem: true,
-          },
-        ]);
-      }
-    };
+  const handleNotice = useCallback((e: any) => {
+    const data = e.detail;
+    if (data.gameType === "MAIN") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(36).substring(2, 9),
+          author: "시스템",
+          authorAvatar: "",
+          message: data.message,
+          timestamp: new Date(),
+          isSystem: true,
+        },
+      ].slice(-100));
+    }
+  }, []);
 
-    // 3. 온라인 접속자 수 업데이트
-    const handleRoomUpdate = (e: any) => {
-      const payload = e.detail;
-      if (payload?.lobbyCount !== undefined) {
-        setOnlineCount(payload.lobbyCount);
-      }
-    };
+  const handleRoomUpdate = useCallback((e: any) => {
+    const payload = e.detail;
+    if (payload?.lobbyCount !== undefined) {
+      setOnlineCount(payload.lobbyCount);
+    }
+  }, []);
 
-    // 전역 이벤트 리스너 등록
-    window.addEventListener("NEW_CHAT", handleNewChat);
-    window.addEventListener("SYSTEM_NOTICE", handleNotice);
-    window.addEventListener("ROOM_LIST_UPDATED", handleRoomUpdate);
+  // ✅ 중앙 집중형 이벤트 구독
+  useEffect(() => {
+    window.addEventListener(SOCKET_EVENTS.NEW_CHAT, handleNewChat);
+    window.addEventListener(SOCKET_EVENTS.SYSTEM_NOTICE, handleNotice);
+    window.addEventListener(SOCKET_EVENTS.ROOM_LIST_UPDATED, handleRoomUpdate);
 
     return () => {
-      window.removeEventListener("NEW_CHAT", handleNewChat);
-      window.removeEventListener("SYSTEM_NOTICE", handleNotice);
-      window.removeEventListener("ROOM_LIST_UPDATED", handleRoomUpdate);
+      window.removeEventListener(SOCKET_EVENTS.NEW_CHAT, handleNewChat);
+      window.removeEventListener(SOCKET_EVENTS.SYSTEM_NOTICE, handleNotice);
+      window.removeEventListener(SOCKET_EVENTS.ROOM_LIST_UPDATED, handleRoomUpdate);
     };
-  }, []);
+  }, [handleNewChat, handleNotice, handleRoomUpdate]);
 
   // 채팅 전송
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !isConnected || !currentNickname) return;
+    if (!newMessage.trim() || !isConnected) return;
 
     isMyMessageRef.current = true;
     sendMessage({
       type: "CHAT",
       gameType: "MAIN",
       roomId: "main",
-      sender: currentNickname,
       message: newMessage,
     });
     setNewMessage("");
@@ -177,9 +177,7 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
       >
         {messages.map((msg) => {
           const isMe = msg.author === currentNickname;
-          const isGuestAuthor = isMe
-            ? user.role === "GUEST"
-            : msg.author.startsWith("G");
+          const hasAvatar = msg.authorAvatar && msg.authorAvatar.trim() !== "";
 
           return (
             <div key={msg.id}>
@@ -190,25 +188,25 @@ const LiveChat = ({ user, isOpen, onToggle }: LiveChatProps) => {
                   </span>
                 </div>
               ) : (
-                <div
-                  className={`flex gap-3 ${isMe ? "flex-row-reverse" : "flex-row"}`}
-                >
+                <div className={`flex gap-3 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
                   <div className="avatar shrink-0">
                     <div className="w-9 h-9 rounded-xl border border-white/10 ring-1 ring-white/5 overflow-hidden bg-white/5 flex items-center justify-center">
-                      {isGuestAuthor ? (
-                        <UserCircle className="w-6 h-6 text-white/20" />
-                      ) : (
+                      {hasAvatar ? (
                         <img
-                          src={isMe ? user.avatar : msg.authorAvatar}
+                          src={msg.authorAvatar}
                           alt={msg.author}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.author}`;
+                          }}
                         />
+                      ) : (
+                        <UserCircle className="w-6 h-6 text-white/20" />
                       )}
                     </div>
                   </div>
 
-                  <div
-                    className={`flex flex-col space-y-1.5 max-w-[75%] ${isMe ? "items-end" : "items-start"}`}
-                  >
+                  <div className={`flex flex-col space-y-1.5 max-w-[75%] ${isMe ? "items-end" : "items-start"}`}>
                     <div className="flex items-center gap-2 px-1">
                       <span className="text-[10px] font-black text-gray-400 uppercase italic">
                         {isMe ? "YOU" : msg.author}
