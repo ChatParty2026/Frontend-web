@@ -5,7 +5,7 @@ import { useAuthInit } from "../hooks/useAuthInit";
 
 const GameLayout = () => {
   const { user } = useAuthInit();
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(true);
   const location = useLocation();
 
   // 💡 [수정] 이제 isLobby 여부와 상관없이 isChatOpen 상태만 체크합니다.
