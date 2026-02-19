@@ -9,13 +9,14 @@ import type { ChatMessage } from "../types/chat";
 const GameWaitingRoom = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
-  // ✅ getLatestPlayers 추가
   const { sendMessage, isConnected, user, getRoomInfo, getLatestPlayers } = useSocket();
 
   const [roomTitle, setRoomTitle] = useState("대기실 불러오는 중...");
   const [gameType, setGameType] = useState<string>("");
   const [hostName, setHostName] = useState("");
-  const [players, setPlayers] = useState<any[]>([]); 
+  const [players, setPlayers] = useState<any[]>([]);
+  // ✅ 최대 인원 상태 추가 (기본값 8)
+  const [maxPlayers, setMaxPlayers] = useState<number>(8);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -25,23 +26,22 @@ const GameWaitingRoom = () => {
   const isMyMessageRef = useRef(false);
 
   const isMeHost = hostName === user?.nickname;
-  // players 배열에서 내 상태 찾기
   const myStatus = players.find(p => (typeof p === 'string' ? p : p.nickname) === user?.nickname);
   const isMeReady = typeof myStatus === 'object' ? myStatus.isReady : false;
 
-  // --- 1. 초기 데이터 로드 (JustChatRoom 방식) ---
+  // --- 1. 초기 데이터 로드 ---
   const loadRoomData = useCallback(() => {
     if (!roomId || !isConnected) return;
 
-    // 1. 방 기본 정보 캐시에서 가져오기
     const info = getRoomInfo(roomId);
     if (info) {
       setRoomTitle(info.title);
       setGameType(info.gameType);
       setHostName(info.hostName || "");
+      // ✅ 초기 로드시 maxPlayers 설정
+      if (info.maxPlayers) setMaxPlayers(info.maxPlayers);
     }
 
-    // 2. 참여자 목록 캐시에서 즉시 가져오기 (입장 직후 빈화면 방지)
     const latestPlayers = getLatestPlayers(roomId);
     if (latestPlayers && latestPlayers.length > 0) {
       setPlayers(latestPlayers);
@@ -52,7 +52,7 @@ const GameWaitingRoom = () => {
     loadRoomData();
   }, [loadRoomData]);
 
-  // --- 2. 소켓 이벤트 리스너 (데이터 추출 경로 최적화) ---
+  // --- 2. 소켓 이벤트 리스너 ---
   useEffect(() => {
     if (!roomId) return;
 
@@ -60,7 +60,6 @@ const GameWaitingRoom = () => {
       const data = e.detail;
       if (data.roomId !== roomId) return;
 
-      // ✅ payload 내부와 루트 레벨 모두 체크 (서버 패킷 구조 대응)
       const playersList = data.payload?.players || data.players;
       if (playersList) setPlayers(playersList);
 
@@ -69,6 +68,10 @@ const GameWaitingRoom = () => {
 
       const title = data.payload?.title || data.title;
       if (title) setRoomTitle(title);
+
+      // ✅ 소켓 업데이트 시 maxPlayers 갱신
+      const maxP = data.payload?.maxPlayers || data.maxPlayers;
+      if (maxP) setMaxPlayers(maxP);
     };
 
     const handleNewChat = (e: any) => {
@@ -97,7 +100,7 @@ const GameWaitingRoom = () => {
     };
   }, [roomId]);
 
-  // --- 3. 스크롤 및 기타 핸들러 ---
+  // --- 3. 핸들러 ---
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
   }, []);
@@ -150,11 +153,14 @@ const GameWaitingRoom = () => {
               </div>
               <div className="flex items-center gap-2 text-gray-500">
                 <Users className="w-3 h-3" />
-                <span className="text-[11px] font-bold uppercase tracking-widest">{players.length} PLAYERS</span>
+                {/* ✅ 인원수 표시 수정: 현재인원 / 최대인원 */}
+                <span className="text-[11px] font-bold uppercase tracking-widest">
+                  {players.length} / {maxPlayers} PLAYERS
+                </span>
               </div>
             </div>
           </div>
-          <button onClick={handleExit} className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl font-black text-xs hover:bg-red-500 hover:text-white transition-all active:scale-95">
+          <button onClick={handleExit} className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl font-black text-sm hover:bg-red-500 hover:text-white transition-all active:scale-95">
             <LogOut className="w-4 h-4" /> EXIT
           </button>
         </div>
@@ -199,6 +205,13 @@ const GameWaitingRoom = () => {
                   </div>
                 );
               })}
+              
+              {/* ✅ 빈 슬롯 표시 (옵션: 최대 인원까지 빈칸을 채우고 싶을 때) */}
+              {Array.from({ length: Math.max(0, maxPlayers - players.length) }).map((_, i) => (
+                <div key={`empty-${i}`} className="p-3.5 rounded-2xl border border-dashed border-white/5 flex items-center justify-center opacity-20">
+                  <span className="text-[10px] font-black uppercase tracking-widest">Empty Slot</span>
+                </div>
+              ))}
             </div>
           </div>
 
