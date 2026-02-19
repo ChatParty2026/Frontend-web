@@ -1,203 +1,238 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { User, Crown, Send, LogOut, Settings, Play } from "lucide-react";
+import { Crown, Send, LogOut, Settings, Play, CheckCircle2, MessageSquare, Users } from "lucide-react";
 import { useSocket } from "../context/SocketContext";
-
-interface Player {
-  id: number;
-  nickname: string;
-  isHost: boolean;
-  isReady: boolean;
-  avatar?: string;
-}
+import { SOCKET_EVENTS } from "../constants/events";
+import ChatMessageItem from "../components/atoms/ChatMessageItem";
+import type { ChatMessage } from "../types/chat";
 
 const GameWaitingRoom = () => {
-  const { roomId } = useParams(); // URL에서 roomId 추출
+  const { roomId } = useParams();
   const navigate = useNavigate();
+  // ✅ getLatestPlayers 추가
+  const { sendMessage, isConnected, user, getRoomInfo, getLatestPlayers } = useSocket();
+
+  const [roomTitle, setRoomTitle] = useState("대기실 불러오는 중...");
+  const [gameType, setGameType] = useState<string>("");
+  const [hostName, setHostName] = useState("");
+  const [players, setPlayers] = useState<any[]>([]); 
   const [message, setMessage] = useState("");
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [maxCount, setMaxCount] = useState(8);
-  const isHost = players.find((p) => p.nickname === user?.nickname)?.isHost;
-  const [gameType, setGameType] = useState<string>("LIAR");
-  const { sendMessage, isConnected, user } = useSocket();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMyMessageRef = useRef(false);
+
+  const isMeHost = hostName === user?.nickname;
+  // players 배열에서 내 상태 찾기
+  const myStatus = players.find(p => (typeof p === 'string' ? p : p.nickname) === user?.nickname);
+  const isMeReady = typeof myStatus === 'object' ? myStatus.isReady : false;
+
+  // --- 1. 초기 데이터 로드 (JustChatRoom 방식) ---
+  const loadRoomData = useCallback(() => {
+    if (!roomId || !isConnected) return;
+
+    // 1. 방 기본 정보 캐시에서 가져오기
+    const info = getRoomInfo(roomId);
+    if (info) {
+      setRoomTitle(info.title);
+      setGameType(info.gameType);
+      setHostName(info.hostName || "");
+    }
+
+    // 2. 참여자 목록 캐시에서 즉시 가져오기 (입장 직후 빈화면 방지)
+    const latestPlayers = getLatestPlayers(roomId);
+    if (latestPlayers && latestPlayers.length > 0) {
+      setPlayers(latestPlayers);
+    }
+  }, [roomId, isConnected, getRoomInfo, getLatestPlayers]);
 
   useEffect(() => {
-    const handleUpdate = (e: any) => {
-      const {
-        players: updatedPlayers,
-        roomId: eventRoomId,
-        maxCount: updatedMax,
-      } = e.detail;
+    loadRoomData();
+  }, [loadRoomData]);
 
-      if (eventRoomId === roomId) {
-        setPlayers(updatedPlayers);
-        if (updatedMax) setMaxCount(updatedMax);
-      }
+  // --- 2. 소켓 이벤트 리스너 (데이터 추출 경로 최적화) ---
+  useEffect(() => {
+    if (!roomId) return;
+
+    const handleUpdate = (e: any) => {
+      const data = e.detail;
+      if (data.roomId !== roomId) return;
+
+      // ✅ payload 내부와 루트 레벨 모두 체크 (서버 패킷 구조 대응)
+      const playersList = data.payload?.players || data.players;
+      if (playersList) setPlayers(playersList);
+
+      const hName = data.payload?.hostNickname || data.hostNickname || data.hostName;
+      if (hName) setHostName(hName);
+
+      const title = data.payload?.title || data.title;
+      if (title) setRoomTitle(title);
+    };
+
+    const handleNewChat = (e: any) => {
+      const data = e.detail;
+      if (data.roomId !== roomId) return;
+      setMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        author: data.sender,
+        authorAvatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.sender}`,
+        message: data.message,
+        timestamp: new Date(),
+        isSystem: data.sender === "SYSTEM"
+      }].slice(-100));
     };
 
     window.addEventListener("PLAYER_LIST_UPDATE", handleUpdate);
-    return () => window.removeEventListener("PLAYER_LIST_UPDATE", handleUpdate);
+    window.addEventListener("GAME_INFO", handleUpdate);
+    window.addEventListener(SOCKET_EVENTS.NEW_CHAT, handleNewChat);
+    window.addEventListener(SOCKET_EVENTS.SYSTEM_NOTICE, handleNewChat);
+
+    return () => {
+      window.removeEventListener("PLAYER_LIST_UPDATE", handleUpdate);
+      window.removeEventListener("GAME_INFO", handleUpdate);
+      window.removeEventListener(SOCKET_EVENTS.NEW_CHAT, handleNewChat);
+      window.removeEventListener(SOCKET_EVENTS.SYSTEM_NOTICE, handleNewChat);
+    };
   }, [roomId]);
+
+  // --- 3. 스크롤 및 기타 핸들러 ---
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
+  }, []);
+
+  useEffect(() => {
+    if (isMyMessageRef.current || isAtBottom) {
+      setTimeout(() => scrollToBottom(isMyMessageRef.current ? "smooth" : "auto"), 50);
+      isMyMessageRef.current = false;
+    }
+  }, [messages, isAtBottom, scrollToBottom]);
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim() || !isConnected || !roomId) return;
+    isMyMessageRef.current = true;
+    sendMessage({ type: "CHAT", roomId, message, gameType });
+    setMessage("");
+  };
+
+  const handleToggleReady = () => {
+    sendMessage({ type: "ACTION", actionType: "READY", roomId, gameType });
+  };
+
+  const handleStartGame = () => {
+    if (!isMeHost) return;
+    sendMessage({ type: "ACTION", actionType: "START", roomId, gameType });
+  };
 
   const handleExit = () => {
     if (window.confirm("정말 방에서 나가시겠습니까?")) {
-      if (isConnected && user && roomId) {
-        // 서버에 LEAVE 요청 전송
-        sendMessage({
-          type: "LEAVE",
-          roomId: roomId,
-          sender: user.nickname,
-          gameType: gameType
-        });
-      }
+      if (isConnected && roomId) sendMessage({ type: "LEAVE", roomId, gameType });
       navigate("/rooms");
     }
   };
 
-  const handleStartGame = () => {
-    if (!isHost) {
-      alert("방장만 게임을 시작할 수 있습니다.");
-      return;
-    }
-
-    // 서버에서 받은 "LIAR" -> "liar"로 변환하여 경로 생성
-    const lowerGameType = gameType.toLowerCase();
-
-    // roomId는 useParams()에서 가져온 값을 그대로 사용
-    navigate(`/game/${lowerGameType}/${roomId}`);
-
-    // (참고) 실제 서비스라면 여기서 소켓으로 '게임 시작' 이벤트를 먼저 보내고,
-    // 모든 인원이 동시에 이동하도록 처리하는 것이 좋습니다.
-    /*
-  sendMessage({
-    type: "START_GAME",
-    roomId: roomId,
-    gameType: gameType
-  });
-  */
-  };
-
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-6 flex items-center justify-center">
-      <div className="container max-w-6xl w-full h-[800px] bg-[#121212] rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
-        {/* 상단 헤더 */}
-        <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+    <div className="min-h-screen bg-[#0a0a0a] text-white p-4 md:p-6 flex items-center justify-center font-sans">
+      <div className="container max-w-6xl w-full h-[85vh] bg-[#121212] rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
+        
+        {/* 헤더 */}
+        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
           <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 uppercase">
-              Waiting Room
-            </h1>
-            <div className="px-4 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-400 font-bold text-sm">
-              {players.length} / {maxCount} PLAYERS
+            <div className="p-3 bg-purple-500/20 rounded-2xl hidden sm:block">
+              <MessageSquare className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter">{roomTitle}</h1>
+                <span className="px-2 py-0.5 bg-white/10 border border-white/10 rounded text-[10px] font-bold text-purple-400 uppercase">{gameType}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-500">
+                <Users className="w-3 h-3" />
+                <span className="text-[11px] font-bold uppercase tracking-widest">{players.length} PLAYERS</span>
+              </div>
             </div>
           </div>
-          <button
-            onClick={handleExit}
-            className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl font-bold hover:bg-red-500 hover:text-white transition-all cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-            나가기
+          <button onClick={handleExit} className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl font-black text-xs hover:bg-red-500 hover:text-white transition-all active:scale-95">
+            <LogOut className="w-4 h-4" /> EXIT
           </button>
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* 좌측: 유저 리스트 */}
-          <div className="w-1/3 border-r border-white/5 p-8 overflow-y-auto space-y-4 bg-black/20 custom-scrollbar">
-            <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-6">
-              Player List
-            </h2>
-            {players.map((player) => (
-              <div
-                key={player.id}
-                className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                  player.isHost
-                    ? "bg-purple-500/5 border-purple-500/30"
-                    : "bg-white/5 border-white/5"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 ${player.isHost ? "border-purple-500" : "border-gray-700"}`}
-                  >
-                    <User
-                      className={
-                        player.isHost ? "text-purple-500" : "text-gray-600"
-                      }
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold">{player.nickname}</span>
-                      {player.isHost && (
-                        <Crown className="w-3 h-3 text-yellow-500" />
-                      )}
-                    </div>
-                    <span
-                      className={`text-[10px] font-black ${player.isReady ? "text-emerald-500" : "text-gray-600"}`}
-                    >
-                      {player.isReady ? "READY" : "WAITING"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+          {/* 좌측: 참여자 목록 */}
+          <div className="w-full md:w-[320px] border-r border-white/5 p-6 overflow-y-auto bg-black/20 custom-scrollbar">
+            <div className="space-y-3">
+              {players.map((p, i) => {
+                const nick = typeof p === 'string' ? p : (p.nickname || p.sender);
+                const avatar = typeof p === 'object' ? p.avatar : "";
+                const isReady = typeof p === 'object' ? p.isReady : false;
+                const isHost = nick === hostName;
+                const isMe = nick === user?.nickname;
 
-            {/* 빈 슬롯 표시: maxCount 적용 */}
-            {Array.from({ length: Math.max(0, maxCount - players.length) }).map(
-              (_, i) => (
-                <div
-                  key={`empty-${i}`}
-                  className="p-4 rounded-2xl border border-dashed border-white/5 flex items-center justify-center text-gray-800 italic font-bold"
-                >
-                  EMPTY SLOT
-                </div>
-              ),
-            )}
+                if (!nick) return null;
+
+                return (
+                  <div key={`${nick}-${i}`} className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${isMe ? "bg-purple-500/10 border-purple-500/30" : "bg-white/5 border-white/5"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`relative w-10 h-10 rounded-xl overflow-hidden border ${isHost ? "border-yellow-500/50" : "border-white/10"}`}>
+                        {avatar ? (
+                          <img src={avatar} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center text-xs font-black ${isHost ? "bg-yellow-500/20 text-yellow-500" : "bg-purple-500/20 text-purple-400"}`}>
+                            {nick[0]?.toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-sm font-bold ${isMe ? "text-purple-300" : "text-gray-300"}`}>{nick}</span>
+                          {isMe && <span className="text-[9px] bg-purple-500/20 text-purple-400 px-1 rounded font-black">ME</span>}
+                        </div>
+                        <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isHost ? "text-yellow-500" : isReady ? "text-emerald-500" : "text-gray-600"}`}>
+                          {isHost ? "Leader" : isReady ? "READY" : "WAITING"}
+                        </span>
+                      </div>
+                    </div>
+                    {isHost && <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500/20" />}
+                    {!isHost && isReady && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* 우측: 채팅 및 설정 */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 p-8 overflow-y-auto space-y-4 custom-scrollbar">
-              <div className="text-center">
-                <span className="text-[11px] bg-white/5 px-4 py-1 rounded-full text-gray-500 font-medium">
-                  즐거운 파티를 위해 매너 채팅을 부탁드려요! ✨
-                </span>
-              </div>
-              {/* 시스템 메시지 예시 */}
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-bold text-purple-400">
-                  System
-                </span>
-                <p className="text-sm text-gray-400 bg-white/5 p-3 rounded-2xl rounded-tl-none border border-white/5">
-                  방에 입장하였습니다. 다른 플레이어를 기다려주세요.
-                </p>
-              </div>
+          {/* 우측: 채팅창 */}
+          <div className="hidden md:flex flex-1 flex-col bg-[#121212]">
+            <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar">
+              {messages.map((msg) => (
+                <ChatMessageItem key={msg.id} msg={msg} isMe={msg.author === user?.nickname} />
+              ))}
+              <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-8 bg-black/40 border-t border-white/5 space-y-6">
-              <div className="flex gap-3">
+            <div className="p-6 bg-black/40 border-t border-white/5 space-y-4">
+              <form onSubmit={handleSendMessage} className="flex gap-3">
                 <input
                   type="text"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="메시지를 입력하세요..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-purple-500 transition-all text-white"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white outline-none"
                 />
-                <button className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all">
-                  <Send className="w-5 h-5 text-purple-500" />
+                <button type="submit" disabled={!message.trim()} className="px-5 bg-white text-black hover:bg-purple-500 hover:text-white rounded-2xl transition-all active:scale-95 shadow-lg">
+                  <Send className="w-5 h-5" />
                 </button>
-              </div>
+              </form>
 
-              <div className="flex gap-4">
-                <button className="flex-1 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2 font-black italic hover:bg-white/10 transition-all uppercase tracking-wider text-gray-400">
-                  <Settings className="w-5 h-5" />
-                  Room Settings
-                </button>
+              <div className="flex gap-3">
                 <button
-                  onClick={handleStartGame}
-                  className="flex-[2] h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center gap-3 font-black italic hover:scale-[1.02] transition-all shadow-[0_0_30px_rgba(168,85,247,0.3)] uppercase tracking-wider text-white"
+                  onClick={isMeHost ? handleStartGame : handleToggleReady}
+                  className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 font-black italic transition-all shadow-xl uppercase tracking-widest active:scale-[0.98] ${
+                    isMeHost ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : isMeReady ? "bg-emerald-500 text-white" : "bg-white text-black hover:bg-purple-500 hover:text-white"
+                  }`}
                 >
-                  <Play className="w-6 h-6 fill-current" />
-                  Start Game
+                  {isMeHost ? <><Play className="w-5 h-5 fill-current" /> Start Game</> : <><CheckCircle2 className="w-5 h-5" /> {isMeReady ? "Ready Complete" : "Ready"}</>}
                 </button>
               </div>
             </div>
