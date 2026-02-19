@@ -137,7 +137,7 @@ const GameWaitingRoom = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-4 md:p-6 flex items-center justify-center font-sans">
+    <div className="min-h-screen bg-transparent text-white p-4 md:p-6 flex items-center justify-center font-sans">
       <div className="container max-w-6xl w-full h-[85vh] bg-[#121212] rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
         
         {/* 헤더 */}

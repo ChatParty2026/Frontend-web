@@ -153,7 +153,7 @@ const JustChatRoom = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center p-4 md:p-6 font-sans">
+    <div className="min-h-screen bg-transparent text-white flex flex-col items-center p-4 md:p-6 font-sans">
       {/* 헤더 영역 */}
       <div className="w-full max-w-5xl flex justify-between items-center mb-6 bg-[#121212] p-5 rounded-[2rem] border border-white/10 shadow-xl">
         <div className="flex items-center gap-4">

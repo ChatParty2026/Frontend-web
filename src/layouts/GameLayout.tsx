@@ -8,23 +8,33 @@ const GameLayout = () => {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const location = useLocation();
 
-  // 💡 [수정] 이제 isLobby 여부와 상관없이 isChatOpen 상태만 체크합니다.
-  // 채팅창이 열려있을 때만 오른쪽 여백(Padding Right)을 줍니다.
-
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white relative overflow-hidden">
-      {/* 메인 콘텐츠 영역 */}
+      
+      {/* ✨ [배경 효과 추가] */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        {/* 왼쪽 상단: 정적인 보라빛 */}
+        <div className="absolute w-[800px] h-[800px] bg-purple-600/[0.05] rounded-full blur-[150px] -top-[200px] -left-[200px]" />
+        
+        {/* 우측 하단: 일렁이는 분홍빛 (채팅창 쪽 분위기) */}
+        <div 
+          className="absolute w-[600px] h-[600px] bg-pink-600/[0.1] rounded-full blur-[130px] bottom-[-100px] right-[-100px] animate-pulse" 
+          style={{ animationDuration: '4s' }}
+        />
+      </div>
+
+      {/* 메인 콘텐츠 영역 - z-10을 주어 배경 위로 올림 */}
       <main
-        className={`transition-all duration-500 ease-in-out ${
+        className={`relative z-10 transition-all duration-500 ease-in-out ${
           isChatOpen 
-            ? "pr-[85%] md:pr-[30%] xl:pr-[25%]" // 채팅창 너비만큼 본문 우측 여백 확보
+            ? "pr-[85%] md:pr-[30%] xl:pr-[25%]" 
             : "pr-0"
         }`}
       >
         <Outlet />
       </main>
 
-      {/* 라이브 채팅 섹션 (고정형) */}
+      {/* 라이브 채팅 섹션 */}
       <aside
         className={`fixed top-8 bottom-8 transition-all duration-500 ease-in-out z-50 ${
           isChatOpen

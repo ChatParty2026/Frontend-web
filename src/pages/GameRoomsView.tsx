@@ -133,7 +133,7 @@ const GameRoomsView = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-6 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-transparent text-white p-6 relative overflow-hidden font-sans">
       <div className="container mx-auto max-w-[1700px] relative z-10">
         <div className="grid lg:grid-cols-12 gap-6">
           <div className="lg:col-span-12">

@@ -48,9 +48,9 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden relative">
-      <div className="absolute w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] -top-24 -left-24 animate-pulse"></div>
+      <div className="absolute w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] -top-24 -left-24 animate-pulse"></div>
       <div
-        className="absolute w-[500px] h-[500px] bg-pink-600/10 rounded-full blur-[120px] top-1/2 -right-24 animate-pulse"
+        className="absolute w-[500px] h-[500px] bg-pink-600/10 rounded-full blur-[130px] top-1/2 -right-24 animate-pulse"
         style={{ animationDelay: "1s" }}
       ></div>
 
