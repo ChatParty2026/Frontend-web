@@ -99,6 +99,12 @@ const GameRoomsView = () => {
     return () => socket.removeEventListener("message", handleRoomListUpdate);
   }, [socket]);
 
+  useEffect(() => {
+    if (!sessionStorage.getItem("isPlaying")) {
+      sessionStorage.setItem("isPlaying", "true");
+    }
+  }, []);
+
   // 방 목록 필터링 로직
   const filteredRooms = useMemo(() => {
     return rooms.filter((room) => {
