@@ -7,6 +7,7 @@ import LiarGameRoom from "./pages/LiarGameRoom";
 import { SocketProvider } from "./context/SocketProvider";
 import JustChatRoom from "./pages/JustChatRoom";
 import GameLayout from "./layouts/GameLayout";
+import MyPage from "./pages/MyPage";
 
 const App = () => {
   const { user, isLoading } = useAuthInit();
@@ -25,8 +26,9 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 소켓이 필요 없는 메인 페이지 */}
+        {/* 소켓이 필요 없는 페이지들 */}
         <Route path="/" element={<Home />} />
+        <Route path="/mypage" element={<MyPage />} />
 
         {/* 소켓이 필요한 게임 관련 페이지들 */}
         <Route
