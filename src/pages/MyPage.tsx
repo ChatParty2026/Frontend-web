@@ -13,13 +13,69 @@ import {
   TrendingUp,
   Lock,
   AlertCircle,
+  Edit2,
+  Check,
+  X,
+  Loader2,
 } from "lucide-react";
 import Header from "../components/Header";
 import { useAuthInit } from "../hooks/useAuthInit";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const MyPage = () => {
   const { user, setUser } = useAuthInit();
+  const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [newNickname, setNewNickname] = useState("");
+  const [isPending, setIsPending] = useState(false);
+  const nicknameInputRef = useRef<HTMLInputElement>(null);
+
+  // 닉네임 수정 모드 진입
+  const handleEditClick = () => {
+    if (user?.role === "GUEST") {
+      alert("게스트는 닉네임을 변경할 수 없습니다.");
+      return;
+    }
+    setNewNickname(user?.nickname || "");
+    setIsEditingNickname(true);
+  };
+
+  // 닉네임 변경 요청
+  const updateNickname = async () => {
+    if (!newNickname || newNickname === user?.nickname) {
+      setIsEditingNickname(false);
+      return;
+    }
+
+    // 클라이언트 사이드 유효성 검사
+    const nicknameRegex = /^[가-힣a-zA-Z0-9]+$/;
+    if (newNickname.length > 11)
+      return alert("닉네임은 최대 11자까지 가능합니다.");
+    if (!nicknameRegex.test(newNickname))
+      return alert("한글, 영문, 숫자만 사용 가능합니다.");
+
+    setIsPending(true);
+    try {
+      const response = await fetch("/api/users/nickname", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nickname: newNickname }),
+      });
+
+      if (response.ok) {
+        setUser({ ...user, nickname: newNickname });
+        setIsEditingNickname(false);
+      } else if (response.status === 409) {
+        alert("이미 사용 중인 닉네임입니다.");
+      } else {
+        alert("닉네임 변경에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("서버 통신 오류가 발생했습니다.");
+    } finally {
+      setIsPending(false);
+    }
+  };
 
   const [isPlaying, setIsPlaying] = useState(
     localStorage.getItem("isPlaying") === "true",
@@ -112,16 +168,61 @@ const MyPage = () => {
                       <Trophy className="w-4 h-4" />
                     </div>
                   </div>
-                  <h2 className="text-2xl font-bold text-white">
-                    {user?.nickname}
-                  </h2>
-                  <div className="flex gap-2 mt-2">
-                    <span className="px-3 py-1 bg-white/20 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
-                      {user?.rank ?? "DIAMOND IV"}
-                    </span>
-                    <span className="px-3 py-1 bg-yellow-400 text-black rounded-lg text-[10px] font-black uppercase leading-none flex items-center">
-                      TOP 5%
-                    </span>
+                  <div className="flex flex-col items-center gap-2 mt-4 w-full">
+                    {isEditingNickname ? (
+                      <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/20 w-full max-w-[240px]">
+                        <input
+                          ref={nicknameInputRef}
+                          type="text"
+                          value={newNickname}
+                          onChange={(e) => setNewNickname(e.target.value)}
+                          className="bg-transparent border-none outline-none text-white text-lg font-bold px-2 w-full"
+                          maxLength={11}
+                          autoFocus
+                        />
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={updateNickname}
+                            disabled={isPending}
+                            className="p-1.5 hover:bg-white/10 rounded-lg text-emerald-400"
+                          >
+                            {isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Check className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => setIsEditingNickname(false)}
+                            className="p-1.5 hover:bg-white/10 rounded-lg text-red-400"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-2xl font-bold text-white">
+                          {user?.nickname}
+                        </h2>
+                        {user?.role !== "GUEST" && (
+                          <button
+                            onClick={handleEditClick}
+                            className="p-1.5 rounded-lg bg-white/10 transition-all hover:bg-white/20"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-white/70" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex gap-2 mt-2">
+                      <span className="px-3 py-1 bg-white/20 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
+                        {user?.rank ?? "DIAMOND IV"}
+                      </span>
+                      <span className="px-3 py-1 bg-yellow-400 text-black rounded-lg text-[10px] font-black uppercase leading-none flex items-center">
+                        TOP 5%
+                      </span>
+                    </div>
                   </div>
                 </div>
 
