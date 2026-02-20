@@ -7,48 +7,32 @@ import {
   LogOut,
   ChevronRight,
   Clock,
+  Target,
+  Flame,
+  Calendar,
+  TrendingUp,
 } from "lucide-react";
 import Header from "../components/Header";
 import { useAuthInit } from "../hooks/useAuthInit";
 
-const USER_STATS = [
-  {
-    label: "참여 게임",
-    value: "128",
-    icon: <Gamepad2 className="w-5 h-5" />,
-    color: "text-purple-400",
-  },
-  {
-    label: "승리 횟수",
-    value: "42",
-    icon: <Trophy className="w-5 h-5" />,
-    color: "text-yellow-400",
-  },
-  {
-    label: "작성 글",
-    value: "15",
-    icon: <MessageSquare className="w-5 h-5" />,
-    color: "text-blue-400",
-  },
-  {
-    label: "받은 좋아요",
-    value: "256",
-    icon: <Heart className="w-5 h-5" />,
-    color: "text-pink-400",
-  },
-];
-
 const MyPage = () => {
   const { user, setUser } = useAuthInit();
 
+  // UserProfileCard의 승률 계산 로직 적용
+  const totalGames = (user?.wins ?? 0) + (user?.losses ?? 0);
+  const winRate = totalGames > 0 ? Math.round((user?.wins ?? 0 / totalGames) * 100) : 0;
+
+  const USER_STATS = [
+    { label: "참여 게임", value: totalGames, icon: <Gamepad2 className="w-5 h-5" />, color: "text-purple-400" },
+    { label: "승리 횟수", value: user?.wins ?? 0, icon: <Trophy className="w-5 h-5" />, color: "text-yellow-400" },
+    { label: "작성 글", value: "15", icon: <MessageSquare className="w-5 h-5" />, color: "text-blue-400" },
+    { label: "받은 좋아요", value: "256", icon: <Heart className="w-5 h-5" />, color: "text-pink-400" },
+  ];
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden relative">
-      {/* 배경 글로우 */}
       <div className="absolute w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[150px] -top-48 -right-24 animate-pulse"></div>
-      <div
-        className="absolute w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[130px] bottom-0 -left-24 animate-pulse"
-        style={{ animationDelay: "1.5s" }}
-      ></div>
+      <div className="absolute w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[130px] bottom-0 -left-24 animate-pulse" style={{ animationDelay: "1.5s" }}></div>
 
       <Header user={user} setUser={setUser} />
 
@@ -57,12 +41,8 @@ const MyPage = () => {
           {/* 상단 타이틀 */}
           <div className="flex items-end justify-between mb-12">
             <div>
-              <h1 className="text-5xl font-black italic tracking-tighter mb-2 font-display">
-                MY STUDIO
-              </h1>
-              <p className="text-gray-500 font-medium font-sans">
-                내 활동 기록과 프로필을 관리하세요.
-              </p>
+              <h1 className="text-5xl font-black italic tracking-tighter mb-2 font-display">MY STUDIO</h1>
+              <p className="text-gray-500 font-medium font-sans">내 활동 기록과 상세 전적을 확인하세요.</p>
             </div>
             <button className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
               <Settings className="w-6 h-6 text-gray-400 group-hover:rotate-90 transition-transform duration-300" />
@@ -70,63 +50,115 @@ const MyPage = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* 왼쪽: 프로필 카드 */}
+            {/* 왼쪽: 프로필 및 상세 정보 카드 */}
             <div className="lg:col-span-4 space-y-6">
-              <div className="bg-[#121212] rounded-[2.5rem] border border-white/10 p-8 relative overflow-hidden sticky top-32">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500"></div>
-                <div className="flex flex-col items-center text-center mt-4">
-                  <div className="relative mb-6">
-                    <div className="w-32 h-32 rounded-[2rem] bg-gradient-to-tr from-purple-500 to-pink-500 p-1 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
-                      <div className="w-full h-full rounded-[1.8rem] bg-[#1a1a1a] flex items-center justify-center text-5xl overflow-hidden">
-                        {user?.profileImage || "👤"}
+              <div className="bg-[#121212] rounded-[2.5rem] border border-white/10 overflow-hidden sticky top-32 shadow-2xl">
+                {/* UserProfileCard의 상단 그라데이션 재현 */}
+                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-8 flex flex-col items-center">
+                  <div className="relative mb-4 group">
+                    <div className="w-32 h-32 rounded-[2rem] ring-4 ring-white/20 shadow-2xl overflow-hidden bg-[#1a1a1a]">
+                      <img src={user?.avatar} alt={user?.nickname} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-black p-2 rounded-xl shadow-lg">
+                      <Trophy className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold text-white">{user?.nickname}</h2>
+                  <div className="flex gap-2 mt-2">
+                    <span className="px-3 py-1 bg-white/20 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
+                      {user?.rank ?? "DIAMOND IV"}
+                    </span>
+                    <span className="px-3 py-1 bg-yellow-400 text-black rounded-lg text-[10px] font-black uppercase leading-none flex items-center">
+                      TOP 5%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-8 space-y-6">
+                  {/* 스트릭 & 가입일 정보 (UserProfileCard 스타일) */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-orange-500/20 text-orange-500 rounded-lg group-hover:scale-110 transition-transform">
+                          <Flame className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-500 leading-none mb-1">STREAK</p>
+                          <p className="text-sm font-bold">{user?.attendanceStreak ?? 15}일 연속 출석</p>
+                        </div>
+                      </div>
+                      <TrendingUp className="w-4 h-4 text-green-500" />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/20 text-blue-500 rounded-lg group-hover:scale-110 transition-transform">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-500 leading-none mb-1">JOINED</p>
+                          <p className="text-sm font-bold">{user?.joinedAt || "2024.01.27"}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <h2 className="text-2xl font-bold mb-1">
-                    {user?.nickname || "Guest"}
-                  </h2>
-                  <p className="text-purple-400 text-sm font-semibold mb-6 uppercase tracking-widest">
-                    Pro Gamer
-                  </p>
-                  <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 font-bold hover:bg-white/10 transition-colors mb-3">
-                    프로필 수정
-                  </button>
-                  <button className="w-full py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2">
-                    <LogOut className="w-4 h-4" /> 로그아웃
-                  </button>
+
+                  <div className="divider opacity-5"></div>
+
+                  <div className="space-y-3">
+                    <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 font-bold hover:bg-white/10 transition-colors">프로필 수정</button>
+                    <button className="w-full py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2">
+                      <LogOut className="w-4 h-4" /> 로그아웃
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* 오른쪽: 콘텐츠 영역 */}
+            {/* 오른쪽: 상세 통계 및 활동 */}
             <div className="lg:col-span-8 space-y-8">
               {/* 통계 그리드 */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {USER_STATS.map((stat, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-white/5 border border-white/10 rounded-3xl p-6 transition-transform hover:-translate-y-1 backdrop-blur-sm"
-                  >
+                  <div key={idx} className="bg-[#121212] border border-white/10 rounded-3xl p-6 transition-transform hover:-translate-y-1">
                     <div className={`${stat.color} mb-3`}>{stat.icon}</div>
-                    <div className="text-2xl font-black">{stat.value}</div>
-                    <div className="text-[10px] text-gray-500 font-bold uppercase mt-1 tracking-tighter">
-                      {stat.label}
-                    </div>
+                    <div className="text-2xl font-black leading-none">{stat.value}</div>
+                    <div className="text-[10px] text-gray-500 font-bold uppercase mt-2 tracking-widest">{stat.label}</div>
                   </div>
                 ))}
               </div>
 
-{/* 최근 활동 섹션 */}
+              {/* 승률 분석 (UserProfileCard의 프로그레스 바) */}
+              <div className="bg-[#121212] rounded-[2.5rem] border border-white/10 p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold flex items-center gap-2 italic">
+                    <Target className="w-5 h-5 text-secondary text-pink-500" /> WIN RATE ANALYSIS
+                  </h3>
+                  <div className="text-2xl font-black text-pink-500 italic">{winRate}%</div>
+                </div>
+                <div className="space-y-4">
+                  <div className="w-full h-4 bg-white/5 rounded-full overflow-hidden p-1">
+                    <div 
+                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.5)]"
+                      style={{ width: `${winRate}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                    <span>Losses: {user?.losses ?? 42}</span>
+                    <span>Wins: {user?.wins ?? 128}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 최근 활동 섹션 */}
               <div className="bg-[#121212] rounded-[2.5rem] border border-white/10 p-8">
                 <h3 className="text-xl font-bold mb-6 flex items-center gap-2 italic">
                   <Clock className="w-5 h-5 text-purple-500" /> RECENT ACTIVITY
                 </h3>
                 <div className="space-y-4">
                   {[1, 2].map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/20 transition-all group">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                        🎮
-                      </div>
+                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/20 transition-all group cursor-pointer">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-xl">🎮</div>
                       <div className="flex-1">
                         <p className="font-bold group-hover:text-purple-400 transition-colors">스피드 퀴즈 우승!</p>
                         <p className="text-xs text-gray-500">2026.02.21 • 랭크 포인트 +15</p>
@@ -135,11 +167,8 @@ const MyPage = () => {
                     </div>
                   ))}
                 </div>
-                
-                {/* 추가된 SHOW ALL 버튼 */}
                 <button className="w-full mt-6 py-4 text-xs font-bold text-gray-500 hover:text-white transition-all border-t border-white/5 flex items-center justify-center gap-2 group">
-                  SHOW ALL ACTIVITIES
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  SHOW ALL ACTIVITIES <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
 
@@ -149,30 +178,18 @@ const MyPage = () => {
                   <h3 className="text-xl font-bold flex items-center gap-2 italic">
                     <MessageSquare className="w-5 h-5 text-blue-400" /> MY POSTS
                   </h3>
-                  <button className="text-xs font-bold text-gray-500 hover:text-white transition-colors">
-                    VIEW ALL
-                  </button>
+                  <button className="text-xs font-bold text-gray-500 hover:text-white transition-colors uppercase">View All</button>
                 </div>
                 <div className="space-y-3">
                   {[1, 2, 3].map((_, i) => (
-                    <div
-                      key={i}
-                      className="group flex items-center justify-between p-5 rounded-3xl bg-white/5 border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all cursor-pointer"
-                    >
+                    <div key={i} className="group flex items-center justify-between p-5 rounded-3xl bg-white/5 border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all cursor-pointer">
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">
-                          Free Board
-                        </span>
-                        <h4 className="font-bold text-gray-200 group-hover:text-white transition-colors line-clamp-1">
-                          오늘 스피드 퀴즈 같이 하실 분 구함! ({i + 2})
-                        </h4>
+                        <span className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Free Board</span>
+                        <h4 className="font-bold text-gray-200 group-hover:text-white transition-colors">오늘 스피드 퀴즈 같이 하실 분 구함! ({i + 2})</h4>
                         <div className="flex items-center gap-3 mt-1">
-                          <span className="text-[10px] text-gray-500 uppercase">
-                            2026.02.21
-                          </span>
+                          <span className="text-[10px] text-gray-500 uppercase">2026.02.21</span>
                           <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                            <Heart className="w-3 h-3 text-pink-500" />{" "}
-                            {i * 5 + 3}
+                            <Heart className="w-3 h-3 text-pink-500 fill-pink-500/20" /> {i * 5 + 3}
                           </span>
                         </div>
                       </div>
