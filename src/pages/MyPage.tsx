@@ -21,6 +21,7 @@ import {
 import Header from "../components/Header";
 import { useAuthInit } from "../hooks/useAuthInit";
 import { useState, useEffect, useRef } from "react";
+import axiosInstance from "../api/axios";
 
 const MyPage = () => {
   const { user, setUser } = useAuthInit();
@@ -48,30 +49,30 @@ const MyPage = () => {
 
     // 클라이언트 사이드 유효성 검사
     const nicknameRegex = /^[가-힣a-zA-Z0-9]+$/;
-    if (newNickname.length > 11)
+    if (newNickname.length > 11) {
       return alert("닉네임은 최대 11자까지 가능합니다.");
-    if (!nicknameRegex.test(newNickname))
+    }
+    if (!nicknameRegex.test(newNickname)) {
       return alert("한글, 영문, 숫자만 사용 가능합니다.");
+    }
 
     setIsPending(true);
     try {
-      const response = await fetch("/api/users/nickname", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname: newNickname }),
+      const response = await axiosInstance.patch("/users/nickname", {
+        nickname: newNickname,
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         setUser({ ...user, nickname: newNickname });
         setIsEditingNickname(false);
-      } else if (response.status === 409) {
+      }
+    } catch (error: any) {
+      // 409 Conflict: 중복 닉네임 처리
+      if (error.response?.status === 409) {
         alert("이미 사용 중인 닉네임입니다.");
       } else {
-        alert("닉네임 변경에 실패했습니다.");
+        alert(error.response?.data?.message || "닉네임 변경에 실패했습니다.");
       }
-    } catch (error) {
-      console.error(error);
-      alert("서버 통신 오류가 발생했습니다.");
     } finally {
       setIsPending(false);
     }
