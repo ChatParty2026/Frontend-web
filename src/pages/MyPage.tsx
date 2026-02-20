@@ -126,7 +126,44 @@ const MyPage = () => {
                 </div>
 
                 <div className="p-8 space-y-6">
-                  {/* 스트릭 & 가입일 정보 (UserProfileCard 스타일) */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-orange-500/20 text-orange-500 rounded-lg group-hover:scale-110 transition-transform">
+                          <Flame className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-500 leading-none mb-1">
+                            STREAK
+                          </p>
+                          <p className="text-sm font-bold">
+                            {user?.attendanceStreak ?? 15}일 연속 출석
+                          </p>
+                        </div>
+                      </div>
+                      <TrendingUp className="w-4 h-4 text-green-500" />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 group hover:bg-white/10 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/20 text-blue-500 rounded-lg group-hover:scale-110 transition-transform">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-500 leading-none mb-1">
+                            JOINED
+                          </p>
+                          <p className="text-sm font-bold">
+                            {user?.joinedAt || "2024.01.27"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="divider opacity-5 h-px bg-white/10 w-full"></div>
+
+                  {/* 프로필 수정 & 로그아웃 버튼 섹션 */}
                   <div className="space-y-3">
                     <div className="relative group">
                       <button
@@ -139,7 +176,6 @@ const MyPage = () => {
                           }`}
                         onClick={() => {
                           if (!isPlaying) {
-                            // TODO: 프로필 수정 모달 오픈 로직
                             console.log("프로필 수정 오픈");
                           }
                         }}
@@ -154,7 +190,6 @@ const MyPage = () => {
                         )}
                       </button>
 
-                      {/* 게임 중일 때 보여주는 경고 툴팁 */}
                       {isPlaying && (
                         <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 bg-orange-500 text-black text-[11px] font-black rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-[0_0_20px_rgba(249,115,22,0.4)]">
                           <div className="relative flex items-center gap-2">
