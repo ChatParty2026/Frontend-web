@@ -3,6 +3,7 @@ import { useState } from "react";
 import LoginModal from "./common/LoginModal";
 import { logout } from "../api/authService";
 import type { AuthUser } from "../types/auth";
+import { Link } from "react-router-dom";
 
 const Header = ({
   user,
@@ -24,7 +25,7 @@ const Header = ({
         {/* 플로팅 글래스모피즘 바 */}
         <div className="w-full max-w-7xl h-20 bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] px-6 md:px-10 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
           {/* 1. 로고 영역 */}
-          <div className="flex items-center gap-3 group cursor-pointer">
+          <Link to="/" className="flex items-center gap-3 group cursor-pointer">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] group-hover:rotate-6 transition-transform">
               <Gamepad2 className="w-7 h-7" />
             </div>
@@ -36,7 +37,7 @@ const Header = ({
                 PARTY
               </span>
             </div>
-          </div>
+          </Link>
 
           {/* 2. 네비게이션 메뉴 (중앙) */}
           <nav className="hidden lg:flex items-center gap-8">
