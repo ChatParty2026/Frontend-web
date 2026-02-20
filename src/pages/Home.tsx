@@ -43,25 +43,11 @@ const Home = () => {
   const { user, setUser } = useAuthInit();
 
   const handlePlayClick = () => {
-    // 1. 게임 실행 상태 저장
-    sessionStorage.setItem("isPlaying", "true");
+    localStorage.setItem("isPlaying", "true");
 
-    // 2. 창 열기
-    const gameWindow = window.open(
-      "/rooms",
-      "gameRooms",
-      "width=1200,height=800",
-    );
+    window.open("/rooms", "gameRooms", "width=1200,height=800");
 
-    // 3. (선택사항) 부모 창에서 자식 창이 닫히는지 주기적으로 체크 (강제 종료 대비)
-    const checkChild = setInterval(() => {
-      if (gameWindow?.closed) {
-        sessionStorage.removeItem("isPlaying");
-        clearInterval(checkChild);
-        // 마이페이지가 열려있다면 상태 반영을 위해 이벤트를 쏴줄 수도 있습니다.
-        window.dispatchEvent(new Event("storage"));
-      }
-    }, 1000);
+    window.dispatchEvent(new Event("storage"));
   };
 
   return (

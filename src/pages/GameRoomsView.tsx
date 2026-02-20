@@ -65,6 +65,21 @@ const GameRoomsView = () => {
     return () => window.removeEventListener("JOIN_SUCCESS", handleJoinSuccess);
   }, [navigate]);
 
+  useEffect(() => {
+    // localStorage로 변경!
+    if (!localStorage.getItem("isPlaying")) {
+      localStorage.setItem("isPlaying", "true");
+    }
+
+    const handleCleanup = () => {
+      localStorage.removeItem("isPlaying");
+    };
+
+    // 탭이 완전히 닫힐 때 localStorage 삭제
+    window.addEventListener("beforeunload", handleCleanup);
+    return () => window.removeEventListener("beforeunload", handleCleanup);
+  }, []);
+
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusTab, setStatusTab] = useState("전체");
@@ -98,12 +113,6 @@ const GameRoomsView = () => {
     socket.addEventListener("message", handleRoomListUpdate);
     return () => socket.removeEventListener("message", handleRoomListUpdate);
   }, [socket]);
-
-  useEffect(() => {
-    if (!sessionStorage.getItem("isPlaying")) {
-      sessionStorage.setItem("isPlaying", "true");
-    }
-  }, []);
 
   // 방 목록 필터링 로직
   const filteredRooms = useMemo(() => {

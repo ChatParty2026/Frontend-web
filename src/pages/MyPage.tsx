@@ -21,19 +21,18 @@ import { useState, useEffect } from "react";
 const MyPage = () => {
   const { user, setUser } = useAuthInit();
 
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(
+    localStorage.getItem("isPlaying") === "true",
+  );
 
   useEffect(() => {
-    const checkGamingStatus = () => {
-      const status = sessionStorage.getItem("isPlaying") === "true";
-      setIsPlaying(status);
+    const handleStorageChange = () => {
+      setIsPlaying(localStorage.getItem("isPlaying") === "true");
     };
 
-    checkGamingStatus();
-
-    // 다른 탭이나 창에서 세션이 변경될 때를 대비한 리스너
-    window.addEventListener("storage", checkGamingStatus);
-    return () => window.removeEventListener("storage", checkGamingStatus);
+    // localStorage의 변화를 실시간으로 감지
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // UserProfileCard의 승률 계산 로직 적용
