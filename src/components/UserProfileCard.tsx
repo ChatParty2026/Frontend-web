@@ -7,7 +7,6 @@ import {
   Settings,
   UserCircle,
   LogIn,
-  PencilLine,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -15,17 +14,16 @@ import type { AuthUser } from "../types/auth";
 import LoginModal from "./common/LoginModal";
 
 const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
-  const [tempName, setTempName] = useState(user?.nickname);
-  const [isEditing, setIsEditing] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const cardClass =
     "card bg-base-100 shadow-sm border border-base-200 overflow-hidden h-full flex flex-col";
 
+  // --- 게스트 모드 UI ---
   if (!user || user.role === "GUEST") {
     return (
       <div data-theme="dark" className={cardClass}>
-        {/* 상단 영역 (고정) */}
+        {/* 게스트 상단 영역: 연필 아이콘 삭제 및 단순 텍스트 표시 */}
         <div className="bg-base-300 p-6 flex items-center gap-4 shrink-0">
           <div className="avatar">
             <div className="w-16 h-16 rounded-2xl bg-base-100 flex items-center justify-center text-base-content/20 shadow-inner">
@@ -33,30 +31,10 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 group">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  onBlur={() => setIsEditing(false)}
-                  onKeyDown={(e) => e.key === "Enter" && setIsEditing(false)}
-                  autoFocus
-                  className="input input-xs input-ghost w-full font-bold text-lg p-0 focus:bg-transparent"
-                />
-              ) : (
-                <>
-                  <h3 className="text-lg font-bold truncate text-base-content/70">
-                    {tempName}
-                  </h3>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="p-1 hover:bg-base-content/10 rounded-md transition-colors"
-                  >
-                    <PencilLine className="w-4 h-4 text-base-content/40" />
-                  </button>
-                </>
-              )}
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold truncate text-base-content/70">
+                {user?.nickname || "GUEST"}
+              </h3>
             </div>
             <p className="text-[10px] font-black opacity-30 uppercase tracking-tighter">
               Guest Mode
@@ -64,7 +42,7 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
           </div>
         </div>
 
-        {/* 바디 영역 */}
+        {/* 게스트 바디 영역 */}
         <div className="card-body p-6 text-center space-y-4 flex-1 flex flex-col justify-center">
           <div className="flex h-full items-center">
             <p className="text-sm text-base-content/70 leading-relaxed ">
@@ -105,21 +83,26 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
     );
   }
 
+  // --- 로그인 유저용 데이터 계산 ---
   const totalGames = user.wins + user.losses;
   const winRate =
     totalGames > 0 ? Math.round((user.wins / totalGames) * 100) : 0;
 
   return (
     <div data-theme="dark" className={cardClass}>
-      {/* 상단 프로필 요약 */}
+      {/* 상단 프로필 요약: 설정 아이콘 회전 애니메이션 적용 */}
       <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6">
         <div className="flex items-center justify-between">
-          {" "}
-          {/* justify-between 추가 */}
           <div className="flex items-center gap-4">
             <div className="avatar">
-              <div className="w-16 h-16 rounded-2xl ring-4 ring-white/20 shadow-2xl">
-                <img src={user.avatar} alt={user.nickname} />
+              <div className="w-16 h-16 rounded-2xl ring-4 ring-white/20 shadow-2xl overflow-hidden bg-gray-800">
+                <img 
+                  src={user.avatar} 
+                  alt={user.nickname} 
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.nickname}`;
+                  }}
+                />
               </div>
             </div>
             <div className="text-white">
@@ -134,36 +117,37 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
               </div>
             </div>
           </div>
-          {/* 마이페이지 링크 버튼 추가 */}
+          
+          {/* 마이페이지 링크 버튼: 설정 아이콘 회전 효과 */}
           <button
-            onClick={() => (window.location.href = "/mypage")} // 임시 경로
-            className="btn btn-circle btn-sm bg-white/10 border-none text-white hover:bg-white/20"
+            onClick={() => (window.location.href = "/mypage")}
+            className="btn btn-circle btn-sm bg-white/10 border-none text-white hover:bg-white/20 group transition-all"
             title="마이페이지"
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300 ease-in-out" />
           </button>
         </div>
       </div>
 
       <div className="card-body p-5 space-y-6 flex-1">
-        {/* 핵심 스탯 (승/패/승률) */}
+        {/* 핵심 스탯 */}
         <div className="grid grid-cols-3 gap-2">
           <div className="text-center">
-            <div className="text-[10px] font-black opacity-40 uppercase">
+            <div className="text-[10px] font-black opacity-40 uppercase text-white">
               Wins
             </div>
             <div className="text-lg font-bold text-primary">
-              {user.wins ?? 128}
+              {user.wins ?? 0}
             </div>
           </div>
           <div className="text-center border-x border-base-200">
-            <div className="text-[10px] font-black opacity-40 uppercase">
+            <div className="text-[10px] font-black opacity-40 uppercase text-white">
               Losses
             </div>
-            <div className="text-lg font-bold">{user.losses ?? 42}</div>
+            <div className="text-lg font-bold text-white">{user.losses ?? 0}</div>
           </div>
           <div className="text-center">
-            <div className="text-[10px] font-black opacity-40 uppercase">
+            <div className="text-[10px] font-black opacity-40 uppercase text-white">
               Win Rate
             </div>
             <div className="text-lg font-bold text-secondary">{winRate}%</div>
@@ -172,8 +156,8 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
 
         {/* 승률 게이지 */}
         <div className="space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold">
-            <span className="flex items-center gap-1 text-base-content/70">
+          <div className="flex justify-between items-center text-xs font-bold text-white">
+            <span className="flex items-center gap-1 opacity-70">
               <Target className="w-3 h-3" /> 승률
             </span>
             <span className="text-secondary">{winRate}%</span>
@@ -188,41 +172,44 @@ const UserProfileCard = ({ user }: { user: AuthUser | null }) => {
         <div className="divider my-0 opacity-50"></div>
 
         {/* 출석 및 기타 정보 */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between group">
+        <div className="space-y-3 text-white">
+          <div className="flex items-center justify-between group cursor-default">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-orange-100 text-orange-600 rounded-lg group-hover:scale-110 transition-transform">
                 <Flame className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-base-content/40 leading-none">
+                <p className="text-[10px] font-bold opacity-40 leading-none">
                   STREAK
                 </p>
                 <p className="text-sm font-bold">
-                  {user.attendanceStreak ?? 15}일 연속 출석
+                  {user.attendanceStreak ?? 0}일 연속 출석
                 </p>
               </div>
             </div>
             <TrendingUp className="w-4 h-4 text-success" />
           </div>
 
-          <div className="flex items-center justify-between group">
+          <div className="flex items-center justify-between group cursor-default">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:scale-110 transition-transform">
                 <Calendar className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-base-content/40 leading-none">
+                <p className="text-[10px] font-bold opacity-40 leading-none">
                   JOINED
                 </p>
-                <p className="text-sm font-bold">{user.joinedAt}</p>
+                <p className="text-sm font-bold">{user.joinedAt || "2024.01.27"}</p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="mt-auto">
-          <button className="btn btn-outline btn-sm w-full mt-2 rounded-xl">
+          <button 
+            onClick={() => (window.location.href = "/mypage")}
+            className="btn btn-outline btn-sm w-full mt-2 rounded-xl text-white hover:bg-white/10"
+          >
             전적 상세 보기
           </button>
         </div>
