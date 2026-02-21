@@ -12,6 +12,7 @@ const GameWaitingRoom = () => {
   const navigate = useNavigate();
   const { sendMessage, isConnected, user, getRoomInfo, getLatestPlayers } = useSocket();
 
+  // --- 상태 관리 ---
   const [roomTitle, setRoomTitle] = useState("대기실 불러오는 중...");
   const [gameType, setGameType] = useState<string>("");
   const [hostName, setHostName] = useState("");
@@ -20,18 +21,18 @@ const GameWaitingRoom = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  
-  // ✅ 설정 모달 상태
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMyMessageRef = useRef(false);
 
+  // --- 유저 권한 및 상태 ---
   const isMeHost = hostName === user?.nickname;
   const myStatus = players.find(p => (typeof p === 'string' ? p : p.nickname) === user?.nickname);
   const isMeReady = typeof myStatus === 'object' ? myStatus.isReady : false;
 
+  // --- 방 정보 초기 로드 ---
   const loadRoomData = useCallback(() => {
     if (!roomId || !isConnected) return;
     const info = getRoomInfo(roomId);
@@ -49,8 +50,11 @@ const GameWaitingRoom = () => {
     loadRoomData();
   }, [loadRoomData]);
 
+  // --- 소켓 이벤트 리스너 ---
   useEffect(() => {
     if (!roomId) return;
+
+    // 1. 방 정보 및 플레이어 리스트 업데이트
     const handleUpdate = (e: any) => {
       const data = e.detail;
       if (data.roomId !== roomId) return;
@@ -64,6 +68,7 @@ const GameWaitingRoom = () => {
       if (maxP) setMaxPlayers(maxP);
     };
 
+    // 2. 채팅 메시지 수신
     const handleNewChat = (e: any) => {
       const data = e.detail;
       if (data.roomId !== roomId) return;
@@ -77,18 +82,41 @@ const GameWaitingRoom = () => {
       }].slice(-100));
     };
 
+    // 3. 게임 액션(시작 신호 등) 처리
+    const handleAction = (e: any) => {
+      const { actionType, payload, roomId: targetId } = e.detail;
+      if (targetId !== roomId) return;
+
+      console.log(`[DEBUG] 수신된 액션: ${actionType}`, payload);
+
+      // 서버 LiarRoom.kt에서 PHASE_CHANGE / phase: INGAME 신호를 보낼 때
+      if (actionType === "PHASE_CHANGE" && payload?.phase === "INGAME") {
+        console.log("🚀 게임 시작 조건 일치! LiarPlayRoom으로 이동합니다.");
+        navigate(`/game/liar/${roomId}`, { 
+          state: { 
+            gameData: payload, // role, category, playerOrder 포함
+            gameType: gameType 
+          } 
+        });
+      }
+    };
+
+    window.addEventListener("ACTION", handleAction);
     window.addEventListener("PLAYER_LIST_UPDATE", handleUpdate);
     window.addEventListener("GAME_INFO", handleUpdate);
     window.addEventListener(SOCKET_EVENTS.NEW_CHAT, handleNewChat);
     window.addEventListener(SOCKET_EVENTS.SYSTEM_NOTICE, handleNewChat);
+
     return () => {
+      window.removeEventListener("ACTION", handleAction);
       window.removeEventListener("PLAYER_LIST_UPDATE", handleUpdate);
       window.removeEventListener("GAME_INFO", handleUpdate);
       window.removeEventListener(SOCKET_EVENTS.NEW_CHAT, handleNewChat);
       window.removeEventListener(SOCKET_EVENTS.SYSTEM_NOTICE, handleNewChat);
     };
-  }, [roomId]);
+  }, [roomId, navigate, gameType]);
 
+  // --- 스크롤 제어 ---
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
   }, []);
@@ -100,6 +128,7 @@ const GameWaitingRoom = () => {
     }
   }, [messages, isAtBottom, scrollToBottom]);
 
+  // --- 핸들러 함수들 ---
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !isConnected || !roomId) return;
@@ -109,15 +138,17 @@ const GameWaitingRoom = () => {
   };
 
   const handleToggleReady = () => {
+    if (!roomId || !isConnected) return;
+    console.log("📤 [DEBUG] 준비 상태 변경 요청 전송");
     sendMessage({ type: "ACTION", actionType: "READY", roomId, gameType });
   };
 
   const handleStartGame = () => {
     if (!isMeHost) return;
+    console.log("📤 [DEBUG] 게임 시작 요청 전송");
     sendMessage({ type: "ACTION", actionType: "START", roomId, gameType });
   };
 
-  // ✅ 설정 저장 핸들러
   const handleSaveSettings = (newSettings: any) => {
     if (!isMeHost) return;
     sendMessage({
@@ -137,6 +168,7 @@ const GameWaitingRoom = () => {
     }
   };
 
+  // --- 렌더링 ---
   return (
     <div className="min-h-screen bg-transparent text-white p-4 md:p-6 flex items-center justify-center font-sans">
       <div className="container max-w-6xl w-full h-[85vh] bg-[#121212] rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
@@ -187,11 +219,11 @@ const GameWaitingRoom = () => {
                         )}
                       </div>
                       <div className="flex flex-col">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 text-left">
                           <span className={`text-sm font-bold ${isMe ? "text-purple-300" : "text-gray-300"}`}>{nick}</span>
                           {isMe && <span className="text-[9px] bg-purple-500/20 text-purple-400 px-1 rounded font-black">ME</span>}
                         </div>
-                        <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isHost ? "text-yellow-500" : isReady ? "text-emerald-500" : "text-gray-600"}`}>
+                        <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 text-left ${isHost ? "text-yellow-500" : isReady ? "text-emerald-500" : "text-gray-600"}`}>
                           {isHost ? "Leader" : isReady ? "READY" : "WAITING"}
                         </span>
                       </div>
@@ -228,7 +260,6 @@ const GameWaitingRoom = () => {
               </form>
 
               <div className="flex gap-3">
-                {/* ✅ 방장 전용 세팅 버튼 */}
                 {isMeHost && (
                   <button 
                     onClick={() => setIsSettingsOpen(true)}
@@ -252,7 +283,6 @@ const GameWaitingRoom = () => {
         </div>
       </div>
 
-      {/* ✅ 게임 설정 모달 */}
       <GameSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

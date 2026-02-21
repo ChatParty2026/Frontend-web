@@ -3,11 +3,11 @@ import Home from "./pages/Home";
 import GameRoomsView from "./pages/GameRoomsView";
 import { useAuthInit } from "./hooks/useAuthInit";
 import GameWaitingRoom from "./pages/GameWaitingRoom";
-import LiarGameRoom from "./pages/LiarGameRoom";
 import { SocketProvider } from "./context/SocketProvider";
 import JustChatRoom from "./pages/JustChatRoom";
 import GameLayout from "./layouts/GameLayout";
 import MyPage from "./pages/MyPage";
+import LiarPlayRoom from "./pages/PlayRoom/LiarPlayRoom";
 
 const App = () => {
   const { user, isLoading } = useAuthInit();
@@ -40,7 +40,7 @@ const App = () => {
         >
           <Route path="/rooms" element={<GameRoomsView />} />
           <Route path="/waiting/:roomId" element={<GameWaitingRoom />} />
-          <Route path="/game/liar/:roomId" element={<LiarGameRoom />} />
+          <Route path="/game/liar/:roomId" element={<LiarPlayRoom />} />
           <Route path="/chat/:roomId" element={<JustChatRoom />} />
         </Route>
 
