@@ -1,4 +1,3 @@
-import { X, Send, Image as ImageIcon, Smile, MapPin } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useState } from "react";
 import type { AuthUser } from "../../types/auth";

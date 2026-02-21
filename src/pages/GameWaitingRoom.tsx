@@ -5,6 +5,7 @@ import { useSocket } from "../context/SocketContext";
 import { SOCKET_EVENTS } from "../constants/events";
 import ChatMessageItem from "../components/atoms/ChatMessageItem";
 import type { ChatMessage } from "../types/chat";
+import GameSettingsModal from "../modal/GameSettingsModal";
 
 const GameWaitingRoom = () => {
   const { roomId } = useParams();
@@ -15,11 +16,13 @@ const GameWaitingRoom = () => {
   const [gameType, setGameType] = useState<string>("");
   const [hostName, setHostName] = useState("");
   const [players, setPlayers] = useState<any[]>([]);
-  // ✅ 최대 인원 상태 추가 (기본값 8)
   const [maxPlayers, setMaxPlayers] = useState<number>(8);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  
+  // ✅ 설정 모달 상태
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -29,47 +32,34 @@ const GameWaitingRoom = () => {
   const myStatus = players.find(p => (typeof p === 'string' ? p : p.nickname) === user?.nickname);
   const isMeReady = typeof myStatus === 'object' ? myStatus.isReady : false;
 
-  // --- 1. 초기 데이터 로드 ---
   const loadRoomData = useCallback(() => {
     if (!roomId || !isConnected) return;
-
     const info = getRoomInfo(roomId);
     if (info) {
       setRoomTitle(info.title);
       setGameType(info.gameType);
       setHostName(info.hostName || "");
-      // ✅ 초기 로드시 maxPlayers 설정
       if (info.maxPlayers) setMaxPlayers(info.maxPlayers);
     }
-
     const latestPlayers = getLatestPlayers(roomId);
-    if (latestPlayers && latestPlayers.length > 0) {
-      setPlayers(latestPlayers);
-    }
+    if (latestPlayers && latestPlayers.length > 0) setPlayers(latestPlayers);
   }, [roomId, isConnected, getRoomInfo, getLatestPlayers]);
 
   useEffect(() => {
     loadRoomData();
   }, [loadRoomData]);
 
-  // --- 2. 소켓 이벤트 리스너 ---
   useEffect(() => {
     if (!roomId) return;
-
     const handleUpdate = (e: any) => {
       const data = e.detail;
       if (data.roomId !== roomId) return;
-
       const playersList = data.payload?.players || data.players;
       if (playersList) setPlayers(playersList);
-
       const hName = data.payload?.hostNickname || data.hostNickname || data.hostName;
       if (hName) setHostName(hName);
-
       const title = data.payload?.title || data.title;
       if (title) setRoomTitle(title);
-
-      // ✅ 소켓 업데이트 시 maxPlayers 갱신
       const maxP = data.payload?.maxPlayers || data.maxPlayers;
       if (maxP) setMaxPlayers(maxP);
     };
@@ -91,7 +81,6 @@ const GameWaitingRoom = () => {
     window.addEventListener("GAME_INFO", handleUpdate);
     window.addEventListener(SOCKET_EVENTS.NEW_CHAT, handleNewChat);
     window.addEventListener(SOCKET_EVENTS.SYSTEM_NOTICE, handleNewChat);
-
     return () => {
       window.removeEventListener("PLAYER_LIST_UPDATE", handleUpdate);
       window.removeEventListener("GAME_INFO", handleUpdate);
@@ -100,7 +89,6 @@ const GameWaitingRoom = () => {
     };
   }, [roomId]);
 
-  // --- 3. 핸들러 ---
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
   }, []);
@@ -129,6 +117,19 @@ const GameWaitingRoom = () => {
     sendMessage({ type: "ACTION", actionType: "START", roomId, gameType });
   };
 
+  // ✅ 설정 저장 핸들러
+  const handleSaveSettings = (newSettings: any) => {
+    if (!isMeHost) return;
+    sendMessage({
+      type: "ACTION",
+      actionType: "UPDATE_SETTINGS",
+      roomId,
+      gameType,
+      payload: newSettings
+    });
+    setIsSettingsOpen(false);
+  };
+
   const handleExit = () => {
     if (window.confirm("정말 방에서 나가시겠습니까?")) {
       if (isConnected && roomId) sendMessage({ type: "LEAVE", roomId, gameType });
@@ -153,7 +154,6 @@ const GameWaitingRoom = () => {
               </div>
               <div className="flex items-center gap-2 text-gray-500">
                 <Users className="w-3 h-3" />
-                {/* ✅ 인원수 표시 수정: 현재인원 / 최대인원 */}
                 <span className="text-[11px] font-bold uppercase tracking-widest">
                   {players.length} / {maxPlayers} PLAYERS
                 </span>
@@ -175,16 +175,12 @@ const GameWaitingRoom = () => {
                 const isReady = typeof p === 'object' ? p.isReady : false;
                 const isHost = nick === hostName;
                 const isMe = nick === user?.nickname;
-
                 if (!nick) return null;
-
                 return (
                   <div key={`${nick}-${i}`} className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${isMe ? "bg-purple-500/10 border-purple-500/30" : "bg-white/5 border-white/5"}`}>
                     <div className="flex items-center gap-3">
                       <div className={`relative w-10 h-10 rounded-xl overflow-hidden border ${isHost ? "border-yellow-500/50" : "border-white/10"}`}>
-                        {avatar ? (
-                          <img src={avatar} className="w-full h-full object-cover" alt="" />
-                        ) : (
+                        {avatar ? <img src={avatar} className="w-full h-full object-cover" alt="" /> : (
                           <div className={`w-full h-full flex items-center justify-center text-xs font-black ${isHost ? "bg-yellow-500/20 text-yellow-500" : "bg-purple-500/20 text-purple-400"}`}>
                             {nick[0]?.toUpperCase()}
                           </div>
@@ -205,19 +201,12 @@ const GameWaitingRoom = () => {
                   </div>
                 );
               })}
-              
-              {/* ✅ 빈 슬롯 표시 (옵션: 최대 인원까지 빈칸을 채우고 싶을 때) */}
-              {Array.from({ length: Math.max(0, maxPlayers - players.length) }).map((_, i) => (
-                <div key={`empty-${i}`} className="p-3.5 rounded-2xl border border-dashed border-white/5 flex items-center justify-center opacity-20">
-                  <span className="text-[10px] font-black uppercase tracking-widest">Empty Slot</span>
-                </div>
-              ))}
             </div>
           </div>
 
           {/* 우측: 채팅창 */}
           <div className="hidden md:flex flex-1 flex-col bg-[#121212]">
-            <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar">
+            <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar text-left">
               {messages.map((msg) => (
                 <ChatMessageItem key={msg.id} msg={msg} isMe={msg.author === user?.nickname} />
               ))}
@@ -239,6 +228,16 @@ const GameWaitingRoom = () => {
               </form>
 
               <div className="flex gap-3">
+                {/* ✅ 방장 전용 세팅 버튼 */}
+                {isMeHost && (
+                  <button 
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all active:scale-95 group shadow-xl"
+                  >
+                    <Settings className="w-6 h-6 text-gray-400 group-hover:rotate-90 transition-transform duration-300" />
+                  </button>
+                )}
+                
                 <button
                   onClick={isMeHost ? handleStartGame : handleToggleReady}
                   className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 font-black italic transition-all shadow-xl uppercase tracking-widest active:scale-[0.98] ${
@@ -252,6 +251,15 @@ const GameWaitingRoom = () => {
           </div>
         </div>
       </div>
+
+      {/* ✅ 게임 설정 모달 */}
+      <GameSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        gameType={gameType}
+        onSave={handleSaveSettings}
+        initialMaxPlayers={maxPlayers}
+      />
     </div>
   );
 };
