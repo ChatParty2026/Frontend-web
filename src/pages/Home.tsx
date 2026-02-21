@@ -5,38 +5,10 @@ import UserProfileCard from "../components/UserProfileCard";
 import { useAuthInit } from "../hooks/useAuthInit";
 
 const FEATURED_GAMES = [
-  {
-    id: 1,
-    title: "스피드 퀴즈",
-    description: "빠른 반응 속도로 정답을 맞춰보세요!",
-    icon: "⚡",
-    color: "from-yellow-400 to-orange-500",
-    glow: "shadow-orange-500/20",
-  },
-  {
-    id: 2,
-    title: "그림 맞추기",
-    description: "그림을 보고 단어를 맞춰보세요",
-    icon: "🎨",
-    color: "from-pink-400 to-purple-500",
-    glow: "shadow-pink-500/20",
-  },
-  {
-    id: 3,
-    title: "초성 퀴즈",
-    description: "초성만 보고 정답을 맞춰보세요",
-    icon: "📝",
-    color: "from-blue-400 to-cyan-500",
-    glow: "shadow-blue-500/20",
-  },
-  {
-    id: 4,
-    title: "스무고개",
-    description: "질문을 통해 정답을 찾아보세요",
-    icon: "❓",
-    color: "from-green-400 to-emerald-500",
-    glow: "shadow-emerald-500/20",
-  },
+  { id: 1, title: "스피드 퀴즈", description: "빠른 반응 속도로 정답을 맞춰보세요!", icon: "⚡", color: "from-yellow-400 to-orange-500", glow: "shadow-orange-500/20" },
+  { id: 2, title: "그림 맞추기", description: "그림을 보고 단어를 맞춰보세요", icon: "🎨", color: "from-pink-400 to-purple-500", glow: "shadow-pink-500/20" },
+  { id: 3, title: "초성 퀴즈", description: "초성만 보고 정답을 맞춰보세요", icon: "📝", color: "from-blue-400 to-cyan-500", glow: "shadow-blue-500/20" },
+  { id: 4, title: "스무고개", description: "질문을 통해 정답을 찾아보세요", icon: "❓", color: "from-green-400 to-emerald-500", glow: "shadow-emerald-500/20" },
 ];
 
 const Home = () => {
@@ -44,19 +16,14 @@ const Home = () => {
 
   const handlePlayClick = () => {
     localStorage.setItem("isPlaying", "true");
-
     window.open("/rooms", "gameRooms", "width=1200,height=800");
-
     window.dispatchEvent(new Event("storage"));
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden relative">
+    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden relative">
       <div className="absolute w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] -top-24 -left-24 animate-pulse"></div>
-      <div
-        className="absolute w-[500px] h-[500px] bg-pink-600/10 rounded-full blur-[130px] top-1/2 -right-24 animate-pulse"
-        style={{ animationDelay: "1s" }}
-      ></div>
+      <div className="absolute w-[500px] h-[500px] bg-pink-600/10 rounded-full blur-[130px] top-1/2 -right-24 animate-pulse" style={{ animationDelay: "1s" }}></div>
 
       <Header user={user} setUser={setUser} />
 
@@ -93,56 +60,41 @@ const Home = () => {
             </button>
           </div>
 
-          {/* Featured Games Grid */}
+          {/* Featured Games Section */}
           <section className="mb-24">
             <div className="flex items-center justify-between mb-10">
-              <h2 className="text-3xl font-black italic tracking-tight">
-                HOT GAMES ⚡
-              </h2>
-              <button className="text-sm font-bold text-gray-500 hover:text-white transition-colors">
-                VIEW ALL
-              </button>
+              <h2 className="text-3xl font-black italic tracking-tight">HOT GAMES ⚡</h2>
+              <button className="text-sm font-bold text-gray-500 hover:text-white transition-colors">VIEW ALL</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {FEATURED_GAMES.map((game) => (
-                <div
-                  key={game.id}
-                  className="group relative rounded-[2rem] p-px bg-gradient-to-b from-white/20 to-transparent hover:from-purple-500/50 transition-all cursor-pointer"
-                  onClick={handlePlayClick}
-                >
+                <div key={game.id} className="group relative rounded-[2rem] p-px bg-gradient-to-b from-white/20 to-transparent hover:from-purple-500/50 transition-all cursor-pointer" onClick={handlePlayClick}>
                   <div className="bg-[#121212] rounded-[2rem] p-8 h-full transition-transform group-hover:-translate-y-2">
-                    <div
-                      className={`w-16 h-16 bg-gradient-to-br ${game.color} rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-lg ${game.glow} group-hover:scale-110 transition-transform`}
-                    >
+                    <div className={`w-16 h-16 bg-gradient-to-br ${game.color} rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-lg ${game.glow} group-hover:scale-110 transition-transform`}>
                       {game.icon}
                     </div>
-                    <h3 className="text-xl font-bold mb-2 group-hover:text-purple-400 transition-colors">
-                      {game.title}
-                    </h3>
-                    <p className="text-sm text-gray-500 leading-relaxed">
-                      {game.description}
-                    </p>
+                    <h3 className="text-xl font-bold mb-2 group-hover:text-purple-400 transition-colors">{game.title}</h3>
+                    <p className="text-sm text-gray-500 leading-relaxed">{game.description}</p>
                   </div>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* 상단 레이아웃: 프로필과 게시판 일부를 배치하거나 레이아웃 재구성 */}
+          {/* Community & Profile Layout */}
           <div className="grid lg:grid-cols-12 gap-8 mb-20 items-start">
             <div className="lg:col-span-8">
               <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-3xl font-black italic tracking-tight text-white">
-                  COMMUNITY 💬
-                </h2>
+                <h2 className="text-3xl font-black italic tracking-tight text-white">COMMUNITY 💬</h2>
                 <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
               </div>
-              <div className="bg-white/5 rounded-[2.5rem] border border-white/10 p-2 backdrop-blur-sm h-[500px] overflow-hidden">
+              <div className="bg-white/5 rounded-[2.5rem] border border-white/10 p-2 backdrop-blur-sm overflow-hidden">
                 <Board user={user} />
               </div>
             </div>
-            <div className="lg:col-span-4">
-              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl h-[500px]">
+
+            <div className="lg:col-span-4 lg:sticky lg:top-32 h-fit">
+              <div className="rounded-[2.5rem] border border-white/10 bg-[#121212] overflow-hidden shadow-2xl">
                 <UserProfileCard key={user?.nickname} user={user} />
               </div>
             </div>
