@@ -12,7 +12,6 @@ const GameWaitingRoom = () => {
   const navigate = useNavigate();
   const { sendMessage, isConnected, user, getRoomInfo, getLatestPlayers } = useSocket();
 
-  // --- 상태 관리 ---
   const [roomTitle, setRoomTitle] = useState("대기실 불러오는 중...");
   const [gameType, setGameType] = useState<string>("");
   const [hostName, setHostName] = useState("");
@@ -27,12 +26,10 @@ const GameWaitingRoom = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMyMessageRef = useRef(false);
 
-  // --- 유저 권한 및 상태 ---
   const isMeHost = hostName === user?.nickname;
   const myStatus = players.find(p => (typeof p === 'string' ? p : p.nickname) === user?.nickname);
   const isMeReady = typeof myStatus === 'object' ? myStatus.isReady : false;
 
-  // --- 방 정보 초기 로드 ---
   const loadRoomData = useCallback(() => {
     if (!roomId || !isConnected) return;
     const info = getRoomInfo(roomId);
@@ -50,11 +47,9 @@ const GameWaitingRoom = () => {
     loadRoomData();
   }, [loadRoomData]);
 
-  // --- 소켓 이벤트 리스너 ---
   useEffect(() => {
     if (!roomId) return;
 
-    // 1. 방 정보 및 플레이어 리스트 업데이트
     const handleUpdate = (e: any) => {
       const data = e.detail;
       if (data.roomId !== roomId) return;
@@ -68,7 +63,6 @@ const GameWaitingRoom = () => {
       if (maxP) setMaxPlayers(maxP);
     };
 
-    // 2. 채팅 메시지 수신
     const handleNewChat = (e: any) => {
       const data = e.detail;
       if (data.roomId !== roomId) return;
@@ -82,20 +76,23 @@ const GameWaitingRoom = () => {
       }].slice(-100));
     };
 
-    // 3. 게임 액션(시작 신호 등) 처리
     const handleAction = (e: any) => {
       const { actionType, payload, roomId: targetId } = e.detail;
-      if (targetId !== roomId) return;
+      if (String(targetId) !== String(roomId)) return;
 
-      console.log(`[DEBUG] 수신된 액션: ${actionType}`, payload);
+      // [핵심 로직] 서버가 보낸 액션을 분석해 게임방으로 리다이렉트
+      if (actionType === "PHASE_CHANGE") {
+        console.log("🚀 [이동] 게임 시작 신호 수신:", payload);
+        
+        // 게임 타입별 경로 (추후 마피아 등 확장 가능)
+        let gamePath = `/game/liar/${roomId}`;
+        if (gameType?.toUpperCase() === "MAFIA") gamePath = `/game/mafia/${roomId}`;
 
-      // 서버 LiarRoom.kt에서 PHASE_CHANGE / phase: INGAME 신호를 보낼 때
-      if (actionType === "PHASE_CHANGE" && payload?.phase === "INGAME") {
-        console.log("🚀 게임 시작 조건 일치! LiarPlayRoom으로 이동합니다.");
-        navigate(`/game/liar/${roomId}`, { 
+        // 중요: payload 전체를 state로 넘김 (LiarPlayRoom에서 초기화용으로 사용)
+        navigate(gamePath, { 
           state: { 
-            gameData: payload, // role, category, playerOrder 포함
-            gameType: gameType 
+            gameData: payload,
+            timestamp: Date.now() 
           } 
         });
       }
@@ -116,7 +113,6 @@ const GameWaitingRoom = () => {
     };
   }, [roomId, navigate, gameType]);
 
-  // --- 스크롤 제어 ---
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
   }, []);
@@ -128,7 +124,6 @@ const GameWaitingRoom = () => {
     }
   }, [messages, isAtBottom, scrollToBottom]);
 
-  // --- 핸들러 함수들 ---
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !isConnected || !roomId) return;
@@ -138,26 +133,17 @@ const GameWaitingRoom = () => {
   };
 
   const handleToggleReady = () => {
-    if (!roomId || !isConnected) return;
-    console.log("📤 [DEBUG] 준비 상태 변경 요청 전송");
     sendMessage({ type: "ACTION", actionType: "READY", roomId, gameType });
   };
 
   const handleStartGame = () => {
     if (!isMeHost) return;
-    console.log("📤 [DEBUG] 게임 시작 요청 전송");
-    sendMessage({ type: "ACTION", actionType: "START", roomId, gameType });
+    sendMessage({ type: "ACTION", actionType: "START", roomId, gameType: "LIAR" });
   };
 
   const handleSaveSettings = (newSettings: any) => {
     if (!isMeHost) return;
-    sendMessage({
-      type: "ACTION",
-      actionType: "UPDATE_SETTINGS",
-      roomId,
-      gameType,
-      payload: newSettings
-    });
+    sendMessage({ type: "ACTION", actionType: "UPDATE_SETTINGS", roomId, gameType, payload: newSettings });
     setIsSettingsOpen(false);
   };
 
@@ -168,17 +154,12 @@ const GameWaitingRoom = () => {
     }
   };
 
-  // --- 렌더링 ---
   return (
     <div className="min-h-screen bg-transparent text-white p-4 md:p-6 flex items-center justify-center font-sans">
       <div className="container max-w-6xl w-full h-[85vh] bg-[#121212] rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
-        
-        {/* 헤더 */}
         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-purple-500/20 rounded-2xl hidden sm:block">
-              <MessageSquare className="w-6 h-6 text-purple-400" />
-            </div>
+            <div className="p-3 bg-purple-500/20 rounded-2xl hidden sm:block"><MessageSquare className="w-6 h-6 text-purple-400" /></div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter">{roomTitle}</h1>
@@ -186,9 +167,7 @@ const GameWaitingRoom = () => {
               </div>
               <div className="flex items-center gap-2 text-gray-500">
                 <Users className="w-3 h-3" />
-                <span className="text-[11px] font-bold uppercase tracking-widest">
-                  {players.length} / {maxPlayers} PLAYERS
-                </span>
+                <span className="text-[11px] font-bold uppercase tracking-widest">{players.length} / {maxPlayers} PLAYERS</span>
               </div>
             </div>
           </div>
@@ -198,7 +177,6 @@ const GameWaitingRoom = () => {
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* 좌측: 참여자 목록 */}
           <div className="w-full md:w-[320px] border-r border-white/5 p-6 overflow-y-auto bg-black/20 custom-scrollbar">
             <div className="space-y-3">
               {players.map((p, i) => {
@@ -236,9 +214,8 @@ const GameWaitingRoom = () => {
             </div>
           </div>
 
-          {/* 우측: 채팅창 */}
           <div className="hidden md:flex flex-1 flex-col bg-[#121212]">
-            <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar text-left">
+            <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar text-left text-sm">
               {messages.map((msg) => (
                 <ChatMessageItem key={msg.id} msg={msg} isMe={msg.author === user?.nickname} />
               ))}
@@ -248,9 +225,7 @@ const GameWaitingRoom = () => {
             <div className="p-6 bg-black/40 border-t border-white/5 space-y-4">
               <form onSubmit={handleSendMessage} className="flex gap-3">
                 <input
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  type="text" value={message} onChange={(e) => setMessage(e.target.value)}
                   placeholder="메시지를 입력하세요..."
                   className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white outline-none"
                 />
@@ -261,14 +236,10 @@ const GameWaitingRoom = () => {
 
               <div className="flex gap-3">
                 {isMeHost && (
-                  <button 
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all active:scale-95 group shadow-xl"
-                  >
+                  <button onClick={() => setIsSettingsOpen(true)} className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all active:scale-95 group shadow-xl">
                     <Settings className="w-6 h-6 text-gray-400 group-hover:rotate-90 transition-transform duration-300" />
                   </button>
                 )}
-                
                 <button
                   onClick={isMeHost ? handleStartGame : handleToggleReady}
                   className={`flex-1 h-14 rounded-2xl flex items-center justify-center gap-3 font-black italic transition-all shadow-xl uppercase tracking-widest active:scale-[0.98] ${
@@ -283,13 +254,7 @@ const GameWaitingRoom = () => {
         </div>
       </div>
 
-      <GameSettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        gameType={gameType}
-        onSave={handleSaveSettings}
-        initialMaxPlayers={maxPlayers}
-      />
+      <GameSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} gameType={gameType} onSave={handleSaveSettings} initialMaxPlayers={maxPlayers} />
     </div>
   );
 };

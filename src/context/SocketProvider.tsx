@@ -8,10 +8,9 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
 
-  const lastPlayerList = useRef<Record<string, string[]>>({});
+  const lastPlayerList = useRef<Record<string, any[]>>({});
   const lastRoomInfo = useRef<Record<string, { title: string; gameType: string; hostName?: string }>>({});
 
-  // ✅ 데이터 업데이트 및 캐싱 로직
   const updateRoomCache = useCallback((rid: string, data: any) => {
     if (!rid) return;
     const { payload, gameType, title } = data;
@@ -29,16 +28,14 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
     }
   }, []);
 
-  // ✅ CustomEvent 발신 헬퍼
   const emit = useCallback((eventName: string, detail: any) => {
     window.dispatchEvent(new CustomEvent(eventName, { detail }));
   }, []);
 
-  // ✅ 메시지 핸들러
   const handleIncomingMessage = useCallback((event: MessageEvent) => {
     try {
       const data = JSON.parse(event.data);
-      const rid = data.roomId;
+      const rid = data.roomId || data.payload?.roomId;
 
       switch (data.type) {
         case "SUCCESS": {
@@ -64,30 +61,31 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
             roomId: rid,
             gameType: data.gameType,
             title: data.title || data.payload?.title,
-            hostName: data.payload?.hostNickname,
+            hostName: data.payload?.hostNickname || data.payload?.hostName,
           });
           break;
         case "ACTION": {
-  const targetRoomId = rid || data.payload?.roomId;
-  
-  // 브라우저 콘솔에서 실제 데이터 구조 확인용
-  console.log("[Socket] ACTION 수신:", data.actionType, data.payload);
+          // 🎯 수정: actionType을 항상 대문자 문자열로 변환하여 로직 일관성 유지
+          const rawActionType = data.actionType;
+          const actionType = typeof rawActionType === "string" ? rawActionType.toUpperCase() : rawActionType;
+          
+          console.log("[Socket] ACTION 수신:", actionType, data.payload);
 
-  emit("ACTION", {
-    actionType: data.actionType,
-    payload: data.payload,
-    roomId: targetRoomId,
-    sender: data.sender,
-  });
+          emit("ACTION", {
+            actionType: actionType,
+            payload: data.payload,
+            roomId: rid,
+            sender: data.sender,
+          });
 
-  if (data.actionType === "GAME_OVER" || data.actionType === 11) { // 코드값 예시 포함
-    emit("GAME_OVER", { ...data.payload, roomId: targetRoomId });
-  }
-  break;
-}
+          // GAME_OVER(11) 대응
+          if (actionType === "GAME_OVER" || actionType === 11) {
+            emit("GAME_OVER", { ...data.payload, roomId: rid });
+          }
+          break;
+        }
         case "ERROR":
           emit("SYSTEM_ERROR", data.message);
-          console.error("Socket Error:", data.message);
           break;
       }
     } catch (err) {
@@ -95,16 +93,10 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
     }
   }, [updateRoomCache, emit]);
 
-  // ✅ 소켓 연결 로직 (재연결 포함)
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    // ⚠️ 중요: 유저 정보가 API 404 등으로 인해 없을 경우 연결하지 않음
-    if (!user || !token) {
-      console.warn("[Socket] 유저 정보 또는 토큰이 없어 연결을 대기합니다.");
-      return;
-    }
+    if (!token) return;
 
-    // ⚠️ Strict Mode 중복 실행 방지: 이미 연결 중이라면 리턴
     if (socketRef.current && (socketRef.current.readyState === WebSocket.OPEN || socketRef.current.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -126,49 +118,44 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
         setIsConnected(false);
         setSocket(null);
         socketRef.current = null;
-        console.log(`❌ [Socket] 연결 종료 (Code: ${e.code}). 3초 후 재시도...`);
-        
-        // 사용자가 의도적으로 닫은 게 아니라면 재연결 시도
         if (e.code !== 1000) {
           setTimeout(() => connect(), 3000);
         }
-      };
-
-      ws.onerror = (e) => {
-        console.error("⚠️ [Socket] 에러 발생:", e);
       };
     };
 
     connect();
 
     return () => {
-      // 컴포넌트가 완전히 사라질 때만 닫음 (Strict Mode 중복 방지는 위쪽 조건문에서 처리)
       if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.close(1000, "Component Unmounted");
+        socketRef.current.close(1000);
         socketRef.current = null;
       }
     };
-  }, [user?.nickname, handleIncomingMessage]); // nickname으로 의존성 구체화
+  }, [handleIncomingMessage]);
 
-  // ✅ 메시지 전송 함수
   const sendMessage = useCallback((message: object) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({
-        sender: user?.nickname,
-        avatar: user?.avatar,
+      // 🎯 수정: user가 없을 경우를 대비한 안전한 전송 로직
+      const payload = {
+        sender: user?.nickname || "Unknown",
+        avatar: user?.avatar || "",
         ...message,
-        timestamp: new Date().toISOString(),
-      }));
-    } else {
-      console.warn("⚠️ 소켓이 연결되지 않았습니다. 메시지 전송 불가:", message);
+        timestamp: Date.now(),
+      };
+      socketRef.current.send(JSON.stringify(payload));
     }
   }, [user]);
 
-  const getLatestPlayers = useCallback((roomId: string) => lastPlayerList.current[roomId] || [], []);
-  const getRoomInfo = useCallback((roomId: string) => lastRoomInfo.current[roomId], []);
-
   return (
-    <SocketContext.Provider value={{ socket, sendMessage, isConnected, user, getLatestPlayers, getRoomInfo }}>
+    <SocketContext.Provider value={{ 
+        socket, 
+        sendMessage, 
+        isConnected, 
+        user, 
+        getLatestPlayers: (rid: string) => lastPlayerList.current[rid] || [], 
+        getRoomInfo: (rid: string) => lastRoomInfo.current[rid] 
+    }}>
       {children}
     </SocketContext.Provider>
   );
