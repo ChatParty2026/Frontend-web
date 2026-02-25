@@ -22,30 +22,42 @@ const GameWaitingRoom = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  // 🎯 서버에서 받은 상세 세팅 상태 저장 (이전 설정 복구용)
+  const [roomSettings, setRoomSettings] = useState({ theme: "fruit", discussionTime: 40, totalRounds: 2, maxPlayers: 8 });
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMyMessageRef = useRef(false);
 
+  const safePlayers = Array.isArray(players) ? players : [];
+  
   const isMeHost = hostName === user?.nickname;
-  const myStatus = players.find(p => (typeof p === 'string' ? p : p.nickname) === user?.nickname);
-  const isMeReady = typeof myStatus === 'object' ? myStatus.isReady : false;
+  const myStatus = safePlayers.find(p => (typeof p === 'string' ? p : p?.nickname) === user?.nickname);
+  const isMeReady = typeof myStatus === 'object' ? myStatus?.isReady : false;
 
-  const loadRoomData = useCallback(() => {
-    if (!roomId || !isConnected) return;
-    const info = getRoomInfo(roomId);
-    if (info) {
-      setRoomTitle(info.title);
-      setGameType(info.gameType);
-      setHostName(info.hostName || "");
-      if (info.maxPlayers) setMaxPlayers(info.maxPlayers);
-    }
-    const latestPlayers = getLatestPlayers(roomId);
-    if (latestPlayers && latestPlayers.length > 0) setPlayers(latestPlayers);
-  }, [roomId, isConnected, getRoomInfo, getLatestPlayers]);
-
+  // 🎯 핵심 해결: 불필요한 렌더링을 막고 무한 루프 에러를 해결한 초기화 로직
   useEffect(() => {
-    loadRoomData();
-  }, [loadRoomData]);
+    if (!roomId || !isConnected) return;
+
+    const info = getRoomInfo(roomId) as any;
+    if (info) {
+      // 값이 실제로 바뀌었을 때만 업데이트하여 리액트의 리렌더링 폭탄 방지!
+      setRoomTitle(prev => (info.title && info.title !== prev) ? info.title : prev);
+      setGameType(prev => (info.gameType && info.gameType !== prev) ? info.gameType : prev);
+      setHostName(prev => (info.hostName && info.hostName !== prev) ? info.hostName : prev);
+      
+      const mP = info.maxPlayers || info.maxCount;
+      if (mP) setMaxPlayers(prev => (mP !== prev) ? mP : prev);
+    }
+
+    const latestPlayers = getLatestPlayers(roomId);
+    if (Array.isArray(latestPlayers) && latestPlayers.length > 0) {
+      setPlayers(latestPlayers);
+    }
+    
+    // getRoomInfo 등은 매번 새로 생성되므로 의존성 배열에서 제외
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, isConnected]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -53,14 +65,24 @@ const GameWaitingRoom = () => {
     const handleUpdate = (e: any) => {
       const data = e.detail;
       if (data.roomId !== roomId) return;
+      
       const playersList = data.payload?.players || data.players;
-      if (playersList) setPlayers(playersList);
+      if (Array.isArray(playersList)) setPlayers(playersList);
+      
       const hName = data.payload?.hostNickname || data.hostNickname || data.hostName;
       if (hName) setHostName(hName);
+      
       const title = data.payload?.title || data.title;
       if (title) setRoomTitle(title);
-      const maxP = data.payload?.maxPlayers || data.maxPlayers;
+      
+      const maxP = data.payload?.maxPlayers || data.payload?.maxCount || data.maxPlayers || data.maxCount;
       if (maxP) setMaxPlayers(maxP);
+
+      const settings = data.payload?.settings || data.settings;
+      if (settings) {
+        setRoomSettings(settings);
+        if (settings.maxPlayers) setMaxPlayers(settings.maxPlayers);
+      }
     };
 
     const handleNewChat = (e: any) => {
@@ -68,9 +90,9 @@ const GameWaitingRoom = () => {
       if (data.roomId !== roomId) return;
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
-        author: data.sender,
+        author: data.sender || "SYSTEM",
         authorAvatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.sender}`,
-        message: data.message,
+        message: data.message || "",
         timestamp: new Date(),
         isSystem: data.sender === "SYSTEM"
       }].slice(-100));
@@ -80,15 +102,10 @@ const GameWaitingRoom = () => {
       const { actionType, payload, roomId: targetId } = e.detail;
       if (String(targetId) !== String(roomId)) return;
 
-      // [핵심 로직] 서버가 보낸 액션을 분석해 게임방으로 리다이렉트
       if (actionType === "PHASE_CHANGE") {
-        console.log("🚀 [이동] 게임 시작 신호 수신:", payload);
-        
-        // 게임 타입별 경로 (추후 마피아 등 확장 가능)
         let gamePath = `/game/liar/${roomId}`;
         if (gameType?.toUpperCase() === "MAFIA") gamePath = `/game/mafia/${roomId}`;
 
-        // 중요: payload 전체를 state로 넘김 (LiarPlayRoom에서 초기화용으로 사용)
         navigate(gamePath, { 
           state: { 
             gameData: payload,
@@ -167,7 +184,7 @@ const GameWaitingRoom = () => {
               </div>
               <div className="flex items-center gap-2 text-gray-500">
                 <Users className="w-3 h-3" />
-                <span className="text-[11px] font-bold uppercase tracking-widest">{players.length} / {maxPlayers} PLAYERS</span>
+                <span className="text-[11px] font-bold uppercase tracking-widest">{safePlayers.length} / {maxPlayers} PLAYERS</span>
               </div>
             </div>
           </div>
@@ -179,20 +196,24 @@ const GameWaitingRoom = () => {
         <div className="flex-1 flex overflow-hidden">
           <div className="w-full md:w-[320px] border-r border-white/5 p-6 overflow-y-auto bg-black/20 custom-scrollbar">
             <div className="space-y-3">
-              {players.map((p, i) => {
-                const nick = typeof p === 'string' ? p : (p.nickname || p.sender);
-                const avatar = typeof p === 'object' ? p.avatar : "";
-                const isReady = typeof p === 'object' ? p.isReady : false;
+              {safePlayers.map((p, i) => {
+                if (!p) return null;
+                
+                const nick = typeof p === 'string' ? p : (p?.nickname || p?.sender);
+                if (!nick) return null;
+                
+                const avatar = typeof p === 'object' ? p?.avatar : "";
+                const isReady = typeof p === 'object' ? p?.isReady : false;
                 const isHost = nick === hostName;
                 const isMe = nick === user?.nickname;
-                if (!nick) return null;
+
                 return (
                   <div key={`${nick}-${i}`} className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${isMe ? "bg-purple-500/10 border-purple-500/30" : "bg-white/5 border-white/5"}`}>
                     <div className="flex items-center gap-3">
                       <div className={`relative w-10 h-10 rounded-xl overflow-hidden border ${isHost ? "border-yellow-500/50" : "border-white/10"}`}>
                         {avatar ? <img src={avatar} className="w-full h-full object-cover" alt="" /> : (
                           <div className={`w-full h-full flex items-center justify-center text-xs font-black ${isHost ? "bg-yellow-500/20 text-yellow-500" : "bg-purple-500/20 text-purple-400"}`}>
-                            {nick[0]?.toUpperCase()}
+                            {nick[0]?.toUpperCase() || "?"}
                           </div>
                         )}
                       </div>
@@ -216,7 +237,7 @@ const GameWaitingRoom = () => {
 
           <div className="hidden md:flex flex-1 flex-col bg-[#121212]">
             <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar text-left text-sm">
-              {messages.map((msg) => (
+              {Array.isArray(messages) && messages.map((msg) => (
                 <ChatMessageItem key={msg.id} msg={msg} isMe={msg.author === user?.nickname} />
               ))}
               <div ref={messagesEndRef} />
@@ -254,7 +275,14 @@ const GameWaitingRoom = () => {
         </div>
       </div>
 
-      <GameSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} gameType={gameType} onSave={handleSaveSettings} initialMaxPlayers={maxPlayers} />
+      <GameSettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        gameType={gameType} 
+        onSave={handleSaveSettings} 
+        initialMaxPlayers={maxPlayers} 
+        initialSettings={roomSettings} 
+      />
     </div>
   );
 };

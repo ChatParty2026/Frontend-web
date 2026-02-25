@@ -9,18 +9,25 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
   const socketRef = useRef<WebSocket | null>(null);
 
   const lastPlayerList = useRef<Record<string, any[]>>({});
-  const lastRoomInfo = useRef<Record<string, { title: string; gameType: string; hostName?: string }>>({});
+  // 🎯 캐시 타입에 maxPlayers와 maxCount 허용
+  const lastRoomInfo = useRef<Record<string, { title: string; gameType: string; hostName?: string; maxPlayers?: number; maxCount?: number }>>({});
 
   const updateRoomCache = useCallback((rid: string, data: any) => {
     if (!rid) return;
-    const { payload, gameType, title } = data;
+    const { payload, gameType, title, maxCount, maxPlayers } = data;
     const hostName = payload?.hostNickname || payload?.hostName;
+    
+    // 🎯 payload 안팎에 있을 수 있는 인원수 데이터를 모두 체크해서 가져옵니다!
+    const mCount = payload?.maxPlayers || payload?.maxCount || maxPlayers || maxCount;
 
     lastRoomInfo.current[rid] = {
       ...lastRoomInfo.current[rid],
       title: payload?.title || title || lastRoomInfo.current[rid]?.title || "즐거운 채팅방",
       gameType: gameType || payload?.gameType || lastRoomInfo.current[rid]?.gameType || "JUST_CHAT",
       hostName: hostName || lastRoomInfo.current[rid]?.hostName,
+      // 🎯 캐시에 인원수를 드디어 저장합니다!
+      maxPlayers: mCount || lastRoomInfo.current[rid]?.maxPlayers || 8,
+      maxCount: mCount || lastRoomInfo.current[rid]?.maxCount || 8,
     };
 
     if (payload?.players) {
@@ -57,6 +64,7 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
         case "GAME_INFO":
           updateRoomCache(rid, data);
           emit("PLAYER_LIST_UPDATE", {
+            ...data.payload, // 🎯 가장 핵심!! 서버가 보낸 세팅(인원수 등)을 안 버리고 통째로 화면(대기실)으로 넘겨줍니다!
             players: data.payload?.players,
             roomId: rid,
             gameType: data.gameType,
@@ -65,7 +73,6 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
           });
           break;
         case "ACTION": {
-          // 🎯 수정: actionType을 항상 대문자 문자열로 변환하여 로직 일관성 유지
           const rawActionType = data.actionType;
           const actionType = typeof rawActionType === "string" ? rawActionType.toUpperCase() : rawActionType;
           
@@ -136,7 +143,6 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
 
   const sendMessage = useCallback((message: object) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      // 🎯 수정: user가 없을 경우를 대비한 안전한 전송 로직
       const payload = {
         sender: user?.nickname || "Unknown",
         avatar: user?.avatar || "",
