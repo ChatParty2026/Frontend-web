@@ -56,7 +56,7 @@ const Home = () => {
           </div>
 
           {/* Featured Games Section - 높이 축소 버전 */}
-          <section className="mb-20">
+          <section id="games" className="mb-20 scroll-mt-28">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-black italic tracking-tight text-white">HOT GAMES ⚡</h2>
               <button className="text-xs font-bold text-gray-500 hover:text-white transition-colors uppercase tracking-widest">View All</button>
@@ -98,7 +98,10 @@ const Home = () => {
           </section>
 
           {/* Community & Profile Layout */}
-          <div className="grid lg:grid-cols-12 gap-8 mb-20 items-start">
+          <section
+            id="community"
+            className="grid lg:grid-cols-12 gap-8 mb-20 items-start scroll-mt-28"
+          >
             <div className="lg:col-span-8">
               <div className="flex items-center gap-3 mb-6">
                 <h2 className="text-2xl font-black italic tracking-tight text-white">COMMUNITY 💬</h2>
@@ -114,7 +117,7 @@ const Home = () => {
                 <UserProfileCard key={user?.nickname} user={user} />
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </main>
     </div>

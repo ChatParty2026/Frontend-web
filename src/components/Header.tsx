@@ -5,6 +5,11 @@ import { logout } from "../api/authService";
 import type { AuthUser } from "../types/auth";
 import { Link } from "react-router-dom";
 
+const NAV_ITEMS = [
+  { label: "게임", href: "#games" },
+  { label: "커뮤니티", href: "#community" },
+];
+
 const Header = ({
   user,
   setUser,
@@ -41,13 +46,13 @@ const Header = ({
 
           {/* 2. 네비게이션 메뉴 (중앙) */}
           <nav className="hidden lg:flex items-center gap-8">
-            {["채팅방", "게시판", "랭킹"].map((item) => (
+            {NAV_ITEMS.map((item) => (
               <a
-                key={item}
-                href={`#${item}`}
+                key={item.href}
+                href={item.href}
                 className="text-sm font-bold text-gray-400 hover:text-white transition-colors relative group"
               >
-                {item}
+                {item.label}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-pink-500 transition-all group-hover:w-full"></span>
               </a>
             ))}
