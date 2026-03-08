@@ -103,8 +103,9 @@ const GameWaitingRoom = () => {
       if (String(targetId) !== String(roomId)) return;
 
       if (actionType === "PHASE_CHANGE") {
+        const gameTypeToUse = payload?.gameType || gameType;
         let gamePath = `/game/liar/${roomId}`;
-        if (gameType?.toUpperCase() === "MAFIA") gamePath = `/game/mafia/${roomId}`;
+        if (gameTypeToUse?.toUpperCase() === "MAFIA") gamePath = `/game/mafia/${roomId}`;
 
         navigate(gamePath, { 
           state: { 
@@ -155,7 +156,7 @@ const GameWaitingRoom = () => {
 
   const handleStartGame = () => {
     if (!isMeHost) return;
-    sendMessage({ type: "ACTION", actionType: "START", roomId, gameType: "LIAR" });
+    sendMessage({ type: "ACTION", actionType: "START", roomId, gameType: gameType });
   };
 
   const handleSaveSettings = (newSettings: any) => {

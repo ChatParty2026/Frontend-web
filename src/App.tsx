@@ -8,6 +8,7 @@ import JustChatRoom from "./pages/JustChatRoom";
 import GameLayout from "./layouts/GameLayout";
 import MyPage from "./pages/MyPage";
 import LiarPlayRoom from "./pages/PlayRoom/LiarPlayRoom";
+import MafiaPlayRoom from "./pages/PlayRoom/MafiaPlayRoom";
 
 const App = () => {
   const { user, isLoading } = useAuthInit();
@@ -41,6 +42,7 @@ const App = () => {
           <Route path="/rooms" element={<GameRoomsView />} />
           <Route path="/waiting/:roomId" element={<GameWaitingRoom />} />
           <Route path="/game/liar/:roomId" element={<LiarPlayRoom />} />
+          <Route path="/game/mafia/:roomId" element={<MafiaPlayRoom />} />
           <Route path="/chat/:roomId" element={<JustChatRoom />} />
         </Route>
 

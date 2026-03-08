@@ -1,6 +1,7 @@
 import { X, Save, Gamepad } from "lucide-react";
 import { useState, useEffect } from "react";
 import LiarGameSettings from "./specific/LiarGameSettings";
+import MafiaGameSettings from "./specific/MafiaGameSettings";
 
 interface Props {
   isOpen: boolean;
@@ -39,7 +40,9 @@ const GameSettingsModal = ({ isOpen, onClose, gameType, onSave, initialSettings 
     switch (gameType) {
       case "LIAR":
         return <LiarGameSettings {...props} />;
-    
+      case "MAFIA":
+        return <MafiaGameSettings {...props} />;
+
       default:
         return (
           <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl text-gray-500 font-bold">
