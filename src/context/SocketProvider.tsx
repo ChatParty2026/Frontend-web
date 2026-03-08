@@ -10,14 +10,15 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
 
   const lastPlayerList = useRef<Record<string, any[]>>({});
   // 🎯 캐시 타입에 maxPlayers와 maxCount 허용
-  const lastRoomInfo = useRef<Record<string, { title: string; gameType: string; hostName?: string; maxPlayers?: number; maxCount?: number }>>({});
+  const lastRoomInfo = useRef<Record<string, { title: string; gameType: string; hostName?: string; maxPlayers?: number; maxCount?: number, settings ?: any }>>({});
 
   const updateRoomCache = useCallback((rid: string, data: any) => {
     if (!rid) return;
     const { payload, gameType, title, maxCount, maxPlayers } = data;
-    const hostName = payload?.hostNickname || payload?.hostName;
     
-    // 🎯 payload 안팎에 있을 수 있는 인원수 데이터를 모두 체크해서 가져옵니다!
+    // 🎯 서버가 보낸 settings(dayTime, mafiaCount 등)를 추출
+    const settings = payload?.settings || data.settings;
+    const hostName = payload?.hostNickname || payload?.hostName;
     const mCount = payload?.maxPlayers || payload?.maxCount || maxPlayers || maxCount;
 
     lastRoomInfo.current[rid] = {
@@ -25,9 +26,10 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
       title: payload?.title || title || lastRoomInfo.current[rid]?.title || "즐거운 채팅방",
       gameType: gameType || payload?.gameType || lastRoomInfo.current[rid]?.gameType || "JUST_CHAT",
       hostName: hostName || lastRoomInfo.current[rid]?.hostName,
-      // 🎯 캐시에 인원수를 드디어 저장합니다!
       maxPlayers: mCount || lastRoomInfo.current[rid]?.maxPlayers || 8,
       maxCount: mCount || lastRoomInfo.current[rid]?.maxCount || 8,
+      // 🎯 [핵심 추가] settings 필드를 캐시에 저장해야 getRoomInfo로 불러올 수 있습니다!
+      settings: settings || lastRoomInfo.current[rid]?.settings || {}
     };
 
     if (payload?.players) {
@@ -68,6 +70,7 @@ export const SocketProvider = ({ children, user }: { children: ReactNode; user: 
             players: data.payload?.players,
             roomId: rid,
             gameType: data.gameType,
+
             title: data.title || data.payload?.title,
             hostName: data.payload?.hostNickname || data.payload?.hostName,
           });

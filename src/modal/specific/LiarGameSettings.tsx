@@ -10,16 +10,16 @@ const THEMES = [
 ];
 
 const LiarGameSettings = ({ settings, onChange }: any) => {
-  const theme = settings.theme || "fruit";
-  const time = settings.discussionTime || 40;
-  const rounds = settings.totalRounds || 2; 
-  // 🎯 새로 추가: 라이어 게임은 3명 ~ 8명으로 제한
-  const maxPlayers = settings.maxPlayers || 8; 
+  // 서버에서 내려온 settings가 없을 경우를 대비한 기본값 가드
+  const theme = settings?.theme || "fruit";
+  const time = settings?.discussionTime || 40;
+  const rounds = settings?.totalRounds || 2; 
+  const maxPlayers = settings?.maxPlayers || 8; 
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-300">
       
-      {/* 🎯 0. 최대 인원 수 설정 (3~8명) */}
+      {/* 0. 최대 인원 수 설정 */}
       <div className="space-y-4">
         <div className="flex justify-between items-end">
           <label className="text-[11px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
@@ -33,7 +33,7 @@ const LiarGameSettings = ({ settings, onChange }: any) => {
           onChange={(e) => onChange({ maxPlayers: Number(e.target.value) })}
           className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500" 
         />
-        <p className="text-[10px] text-gray-600 font-bold text-right">※ 라이어 게임은 3~8인 플레이를 권장합니다.</p>
+        <p className="text-[10px] text-gray-600 font-bold text-right italic">※ 3 ~ 8 PLAYERS</p>
       </div>
 
       <div className="h-px bg-white/5" />
@@ -50,7 +50,7 @@ const LiarGameSettings = ({ settings, onChange }: any) => {
               type="button"
               onClick={() => onChange({ theme: t.id })}
               className={`flex flex-col items-center p-3 rounded-2xl border transition-all ${
-                theme === t.id ? "bg-purple-500/20 border-purple-500 text-white" : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
+                theme === t.id ? "bg-purple-500/20 border-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.2)]" : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
               }`}
             >
               <span className="text-xl">{t.icon}</span>
@@ -76,7 +76,7 @@ const LiarGameSettings = ({ settings, onChange }: any) => {
               onClick={() => onChange({ totalRounds: r })}
               className={`flex-1 py-3 rounded-xl border font-black transition-all ${
                 rounds === r 
-                  ? "bg-purple-500/20 border-purple-500 text-white" 
+                  ? "bg-purple-500/20 border-purple-500 text-white shadow-inner" 
                   : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
               }`}
             >

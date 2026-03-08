@@ -39,22 +39,28 @@ const GameWaitingRoom = () => {
     if (!roomId || !isConnected) return;
 
     const info = getRoomInfo(roomId) as any;
+    console.log(info)
     if (info) {
-      setRoomTitle(prev => (info.title && info.title !== prev) ? info.title : prev);
-      setGameType(prev => (info.gameType && info.gameType !== prev) ? info.gameType : prev);
-      setHostName(prev => (info.hostName && info.hostName !== prev) ? info.hostName : prev);
+      // 기존 필드 세팅
+      setRoomTitle(prev => info.title || prev);
+      setGameType(prev => info.gameType || prev);
+      setHostName(prev => info.hostName || prev);
       
       const mP = info.maxPlayers || info.maxCount;
-      if (mP) setMaxPlayers(prev => (mP !== prev) ? mP : prev);
+      if (mP) setMaxPlayers(mP);
+
+      // 🎯 [핵심 추가] 캐시에 저장된 settings를 상태로 복사!
+      if (info.settings && JSON.stringify(info.settings) !== JSON.stringify(roomSettings)) {
+        console.log("🎯 서버 초기 설정값 로드:", info.settings);
+        setRoomSettings(info.settings);
+      }
     }
 
     const latestPlayers = getLatestPlayers(roomId);
     if (Array.isArray(latestPlayers) && latestPlayers.length > 0) {
       setPlayers(latestPlayers);
     }
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, isConnected]);
+  }, [roomId, isConnected]); // roomSettings를 의존성에 넣지 않도록 주의 (cascading 방지)
 
   useEffect(() => {
     if (!roomId) return;
