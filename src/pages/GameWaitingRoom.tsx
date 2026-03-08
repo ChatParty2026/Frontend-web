@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Crown, Send, LogOut, Settings, Play, CheckCircle2, MessageSquare, Users } from "lucide-react";
+import { Crown, Send, LogOut, Settings, Play, CheckCircle2, MessageSquare, Users, Info, Ban } from "lucide-react";
 import { useSocket } from "../context/SocketContext";
 import { SOCKET_EVENTS } from "../constants/events";
 import ChatMessageItem from "../components/atoms/ChatMessageItem";
@@ -21,8 +21,8 @@ const GameWaitingRoom = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // 🎯 서버에서 받은 상세 세팅 상태 저장 (이전 설정 복구용)
+  
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [roomSettings, setRoomSettings] = useState({ theme: "fruit", discussionTime: 40, totalRounds: 2, maxPlayers: 8 });
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -35,13 +35,11 @@ const GameWaitingRoom = () => {
   const myStatus = safePlayers.find(p => (typeof p === 'string' ? p : p?.nickname) === user?.nickname);
   const isMeReady = typeof myStatus === 'object' ? myStatus?.isReady : false;
 
-  // 🎯 핵심 해결: 불필요한 렌더링을 막고 무한 루프 에러를 해결한 초기화 로직
   useEffect(() => {
     if (!roomId || !isConnected) return;
 
     const info = getRoomInfo(roomId) as any;
     if (info) {
-      // 값이 실제로 바뀌었을 때만 업데이트하여 리액트의 리렌더링 폭탄 방지!
       setRoomTitle(prev => (info.title && info.title !== prev) ? info.title : prev);
       setGameType(prev => (info.gameType && info.gameType !== prev) ? info.gameType : prev);
       setHostName(prev => (info.hostName && info.hostName !== prev) ? info.hostName : prev);
@@ -55,7 +53,6 @@ const GameWaitingRoom = () => {
       setPlayers(latestPlayers);
     }
     
-    // getRoomInfo 등은 매번 새로 생성되므로 의존성 배열에서 제외
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, isConnected]);
 
@@ -114,6 +111,14 @@ const GameWaitingRoom = () => {
           } 
         });
       }
+
+      // 🎯 강퇴당했을 때 로비로 튕겨내는 로직
+      if (actionType === "KICKED" || actionType === "KICK") {
+        if (payload?.targetNick === user?.nickname) {
+          alert("방장에 의해 강퇴되었습니다.");
+          navigate("/rooms"); // 로비(방 목록)로 이동
+        }
+      }
     };
 
     window.addEventListener("ACTION", handleAction);
@@ -129,7 +134,7 @@ const GameWaitingRoom = () => {
       window.removeEventListener(SOCKET_EVENTS.NEW_CHAT, handleNewChat);
       window.removeEventListener(SOCKET_EVENTS.SYSTEM_NOTICE, handleNewChat);
     };
-  }, [roomId, navigate, gameType]);
+  }, [roomId, navigate, gameType, user]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
@@ -165,6 +170,20 @@ const GameWaitingRoom = () => {
     setIsSettingsOpen(false);
   };
 
+  // 🎯 강퇴 처리 함수
+  const handleKickPlayer = (targetNick: string) => {
+    if (!isMeHost) return;
+    if (window.confirm(`${targetNick}님을 방에서 강퇴하시겠습니까?`)) {
+      sendMessage({
+        type: "ACTION",
+        actionType: "KICK",
+        roomId,
+        gameType,
+        payload: { targetNick }
+      });
+    }
+  };
+
   const handleExit = () => {
     if (window.confirm("정말 방에서 나가시겠습니까?")) {
       if (isConnected && roomId) sendMessage({ type: "LEAVE", roomId, gameType });
@@ -175,6 +194,7 @@ const GameWaitingRoom = () => {
   return (
     <div className="min-h-screen bg-transparent text-white p-4 md:p-6 flex items-center justify-center font-sans">
       <div className="container max-w-6xl w-full h-[85vh] bg-[#121212] rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
+        {/* 헤더 부분 */}
         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-purple-500/20 rounded-2xl hidden sm:block"><MessageSquare className="w-6 h-6 text-purple-400" /></div>
@@ -195,8 +215,9 @@ const GameWaitingRoom = () => {
         </div>
 
         <div className="flex-1 flex overflow-hidden">
+          {/* 유저 리스트 영역 */}
           <div className="w-full md:w-[320px] border-r border-white/5 p-6 overflow-y-auto bg-black/20 custom-scrollbar">
-            <div className="space-y-3">
+            <div className="space-y-3 relative">
               {safePlayers.map((p, i) => {
                 if (!p) return null;
                 
@@ -207,29 +228,81 @@ const GameWaitingRoom = () => {
                 const isReady = typeof p === 'object' ? p?.isReady : false;
                 const isHost = nick === hostName;
                 const isMe = nick === user?.nickname;
+                
+                const isSelected = selectedPlayer === nick;
 
                 return (
-                  <div key={`${nick}-${i}`} className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${isMe ? "bg-purple-500/10 border-purple-500/30" : "bg-white/5 border-white/5"}`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`relative w-10 h-10 rounded-xl overflow-hidden border ${isHost ? "border-yellow-500/50" : "border-white/10"}`}>
-                        {avatar ? <img src={avatar} className="w-full h-full object-cover" alt="" /> : (
-                          <div className={`w-full h-full flex items-center justify-center text-xs font-black ${isHost ? "bg-yellow-500/20 text-yellow-500" : "bg-purple-500/20 text-purple-400"}`}>
-                            {nick[0]?.toUpperCase() || "?"}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1.5 text-left">
-                          <span className={`text-sm font-bold ${isMe ? "text-purple-300" : "text-gray-300"}`}>{nick}</span>
-                          {isMe && <span className="text-[9px] bg-purple-500/20 text-purple-400 px-1 rounded font-black">ME</span>}
+                  <div key={`${nick}-${i}`} className={`relative ${isSelected ? 'z-50' : 'z-10'}`}>
+                    
+                    {isSelected && (
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={(e) => { e.stopPropagation(); setSelectedPlayer(null); }} 
+                      />
+                    )}
+
+                    {/* 유저 카드 본체 */}
+                    <div 
+                      onClick={() => setSelectedPlayer(isSelected ? null : nick)}
+                      className={`relative z-50 flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                        isMe ? "bg-purple-500/10 border-purple-500/30 hover:bg-purple-500/20" 
+                        : isSelected ? "bg-white/10 border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.05)]" 
+                        : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`relative w-10 h-10 rounded-xl overflow-hidden border ${isHost ? "border-yellow-500/50" : "border-white/10"}`}>
+                          {avatar ? <img src={avatar} className="w-full h-full object-cover" alt="" /> : (
+                            <div className={`w-full h-full flex items-center justify-center text-xs font-black ${isHost ? "bg-yellow-500/20 text-yellow-500" : "bg-purple-500/20 text-purple-400"}`}>
+                              {nick[0]?.toUpperCase() || "?"}
+                            </div>
+                          )}
                         </div>
-                        <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 text-left ${isHost ? "text-yellow-500" : isReady ? "text-emerald-500" : "text-gray-600"}`}>
-                          {isHost ? "Leader" : isReady ? "READY" : "WAITING"}
-                        </span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5 text-left">
+                            <span className={`text-sm font-bold ${isMe ? "text-purple-300" : "text-gray-300"}`}>{nick}</span>
+                            {isMe && <span className="text-[9px] bg-purple-500/20 text-purple-400 px-1 rounded font-black">ME</span>}
+                          </div>
+                          <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 text-left ${isHost ? "text-yellow-500" : isReady ? "text-emerald-500" : "text-gray-600"}`}>
+                            {isHost ? "Leader" : isReady ? "READY" : "WAITING"}
+                          </span>
+                        </div>
                       </div>
+                      {isHost && <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500/20" />}
+                      {!isHost && isReady && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                     </div>
-                    {isHost && <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500/20" />}
-                    {!isHost && isReady && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+
+                    {/* 말풍선 디자인 */}
+                    {isSelected && (
+                      <div className="absolute top-[105%] right-0 z-50 mt-1 w-36 bg-[#2a2a2a] border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] p-1.5 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                        
+                        {/* 꼬리 */}
+                        <div className="absolute -top-1.5 right-6 w-3 h-3 bg-[#2a2a2a] border-t border-l border-white/10 rotate-45 rounded-tl-[2px]"></div>
+
+                        <div className="relative z-10 flex flex-col gap-0.5">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); console.log('정보보기 로직 호출:', nick); setSelectedPlayer(null); }}
+                            className="flex items-center gap-2.5 w-full p-2.5 hover:bg-white/5 rounded-xl text-xs font-bold text-gray-200 transition-colors"
+                          >
+                            <Info className="w-4 h-4 text-blue-400" /> 정보보기
+                          </button>
+                          
+                          {/* 🎯 강퇴 버튼 클릭 시 handleKickPlayer 호출 */}
+                          {isMeHost && !isMe && (
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                handleKickPlayer(nick); 
+                                setSelectedPlayer(null); 
+                              }}
+                              className="flex items-center gap-2.5 w-full p-2.5 hover:bg-red-500/10 rounded-xl text-xs font-bold text-red-400 transition-colors group"
+                            >
+                              <Ban className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" /> 강퇴하기
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
