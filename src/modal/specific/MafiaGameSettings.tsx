@@ -60,7 +60,7 @@ const MafiaGameSettings = ({ settings, onChange }: any) => {
       <div className="h-px bg-white/5" />
 
       {/* 특수 역할 */}
-      <div className="space-y-4">
+      {/* <div className="space-y-4">
         <label className="text-[11px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
           특수 역할
         </label>
@@ -86,9 +86,9 @@ const MafiaGameSettings = ({ settings, onChange }: any) => {
             <span className="font-bold text-sm">경찰</span>
           </button>
         </div>
-      </div>
+      </div> */}
 
-      <div className="h-px bg-white/5" />
+      {/* <div className="h-px bg-white/5" /> */}
 
       {/* 밤 시간 */}
       <div className="space-y-4">
